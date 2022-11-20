@@ -1,0 +1,1 @@
+cmd_/home/rfx/pm_tools/pccard/pccard.ko := ld -r -m elf_i386 -T ./scripts/module-common.lds  --build-id  -o /home/rfx/pm_tools/pccard/pccard.ko /home/rfx/pm_tools/pccard/pccard.o /home/rfx/pm_tools/pccard/pccard.mod.o ;  true
