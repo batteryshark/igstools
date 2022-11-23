@@ -76,7 +76,10 @@ void update_iostate(void){
     // Coin
     coin_state = (keyst.coin && !keyst_last.coin) ? 1 : 0;
     if(coin_state){
-        coin_counter = (coin_counter++) % 0xFFFF;
+        coin_counter++;
+        if(coin_counter >= 0xFFFF){
+            coin_counter = 0;
+        }
     }
     state_read = 0;
 }
