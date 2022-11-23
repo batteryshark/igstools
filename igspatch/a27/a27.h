@@ -8,6 +8,7 @@
 
 
 enum A27_Region{
+    REGION_TAIWAN,
     REGION_CHINA = 1,
     REGION_HONGKONG,
     REGION_INTERNATIONAL,
