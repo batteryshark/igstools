@@ -28,8 +28,8 @@ void A27Log_Seek(int offset, int result){
     char flag[] = "logs";
     FILE* fp = open_log_file();   
     fwrite(flag,4,1,fp);
-    fwrite(&offset,sizeof(off_t),1,fp);
-    fwrite(&result,sizeof(off_t),1,fp);
+    fwrite(&offset,sizeof(int),1,fp);
+    fwrite(&result,sizeof(int),1,fp);
     close_log_file(fp);
 }
 
@@ -37,8 +37,8 @@ void A27Log_Write(int result, unsigned int count, const void* buffer){
     char flag[] = "logw";
     FILE* fp = open_log_file();   
     fwrite(flag,4,1,fp);
-    fwrite(&result,sizeof(ssize_t),1,fp);
-    fwrite(&count,sizeof(size_t),1,fp);
+    fwrite(&result,sizeof(int),1,fp);
+    fwrite(&count,sizeof(unsigned int),1,fp);
     fwrite(buffer,count,1,fp);    
     close_log_file(fp);
 }
@@ -48,7 +48,7 @@ void A27Log_Read(int result, void* buffer){
     FILE* fp = open_log_file();    
     size_t count = 132 + *(unsigned int*)buffer;
     fwrite(flag,4,1,fp);
-    fwrite(&result,sizeof(ssize_t),1,fp);
+    fwrite(&result,sizeof(int),1,fp);
     fwrite(&count,sizeof(size_t),1,fp);
     fwrite(buffer,count,1,fp);
     close_log_file(fp);
