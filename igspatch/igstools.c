@@ -225,4 +225,14 @@ void __attribute__((constructor)) initialize(void){
     if(getenv("PM_A27LOG")){
         loadlib_A27Log();
     }
+
+    if(getenv("PM_QCTEST")){
+        UNPROTECT(0x8056A3B,4096);
+        memset((void*)0x8056A3B,0x90,0x24);
+    }
+
+    if(getenv("PM_AUTOPLAY")){
+        UNPROTECT(0x80A7DDE,4096);
+        memset((void*)0x80A7DDE,0x90,0x68);
+    }
 }
