@@ -1,7 +1,11 @@
+#pragma once
 
 
 #define PCCARD_PATH "/dev/pccard0"
 #define PCCARD_READ_OK 0xF1
+#define A27_WRITE_HEADER_SIZE 36
+#define A27_READ_HEADER_SIZE 132
+
 
 enum A27_Region{
     REGION_CHINA = 1,
@@ -53,10 +57,8 @@ struct A27_Read_Message{
     unsigned char checksum_1;          
     unsigned char checksum_2;          
     unsigned char a27_message[0x40];              
-    unsigned char data[0x4004];
+    unsigned char data[0x4000];
 };
-
-#define A27_Response_Header_Size sizeof(struct A27_Read_Message) - 0x4004
 
 struct A27_Write_Message{
 	unsigned int dwBufferSize;
@@ -69,6 +71,3 @@ struct A27_Write_Message{
 	unsigned char ucLightPattern[4];
     unsigned char data[0x4000];
 };
-
-static unsigned int a27_protect_table[10] = {6, 7, 3, 4, 8, 0, 1, 2, 9, 5};
-

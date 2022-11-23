@@ -4,18 +4,11 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-#include "pm_keyboardio.h"
 
 #include "a27.h"
 
-static struct A27_Read_Message a27_state = {0};
-static struct A27_Write_Message a27_in = {0};
-static pthread_t song_timer_thread;
+#include "a27emu.h"
 
-static unsigned char a27_emu_iotest[68] = {0};
-static unsigned char a27_emu_lighttest[68] = {0};
-
-// Helpers
 void print_hex(unsigned char* data, unsigned int len) {
         unsigned int i;
 	for (i = 0; i < len; i++) {
@@ -24,30 +17,20 @@ void print_hex(unsigned char* data, unsigned int len) {
 	printf("\n");
 }
 
+static struct A27_Read_Message a27_state = {0};
+static struct A27_Write_Message a27_in = {0};
+static pthread_t song_timer_thread;
 
-unsigned char derive_a27_challenge_offset(unsigned char inval){
-    unsigned char target_value = inval % 10;
-    for(int i=0;i<sizeof(a27_protect_table);i++){
-        if(a27_protect_table[i] == target_value){
-            return i;
-        }
-    }
-    return 0;
-}
+static unsigned char a27_emu_iotest[68] = {0};
+static unsigned char a27_emu_lighttest[68] = {0};
 
-void a27_set_checksum(struct A27_Read_Message* msg){
-    unsigned int cval = (msg->a27_has_message & 0xFF) + \
-        (msg->inet_password_data & 0xFF) + \
-        msg->is_light_io_reset + \
-        (msg->asic_errnum & 0xFF) + \
-        msg->asic_iserror + \
-        msg->coin_inserted + \
-        (msg->dwBufferSize & 0xFF) + \
-        (msg->system_mode & 0xFF);
-    msg->checksum_1 = (cval & 0xFF);
-    msg->checksum_2 = (cval & 0xFF);
+static unsigned short coin_counter = 0;
 
-}
+
+//  ++coin_ctr;
+        //if(coin_ctr == 0xFFFF){coin_ctr = 0;}
+
+
 
 void A27Emu_ModeProcess(unsigned char* in_data){
     unsigned short wcmdwrite = *(unsigned short*)in_data;
@@ -99,7 +82,7 @@ gettimeofday(&tv_n,NULL);
  */
 
 static void *song_timer(void *arg){
-time_val = -1;
+//time_val = -1;
 
 while(!in_song){}
 long long tv_start = timeInMilliseconds();
@@ -114,18 +97,39 @@ while(in_song){
 }
 }
 
-unsigned char data_6e48[40] = {
-	0x42, 0x40, 0x00, 0x00, 0x73, 0x00, 0x00, 0x00, 0x02, 0x40, 0x40, 0x00, 0x73, 0x00, 0x00, 0x00, 
-	0x42, 0x40, 0x00, 0x00, 0x53, 0x01, 0x00, 0x00, 0x42, 0x40, 0x00, 0x00, 0x3A, 0x00, 0x00, 0x00, 
-	0x42, 0x40, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00
+unsigned char data_6e48[] = {
+	0x02, 0x81, 0x00, 0x00, 0x30, 0x01, 0x00, 0x00, // 2 is blue, 0x42 is center 
+    0x42, 0x81, 0x00, 0x00, 0x60, 0x00, 0x00, 0x00, // 2 is blue, 0x42 is center 
+    0x82, 0x81, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00, // 2 is blue, 0x42 is center 
 };
+// 0 2 40 42 80 82
 
+// 02 is blue upperleft thing
+// 42 is the drum
+// 82 is happy face
+// C2 is green thing (maybe 2 is visible)
+// 142 is red
+// 102 is the green circle face
+// 182 offscreen sparkly
+// 1C2 offscreen sparkly
+
+// second byte is either 0 or 1 for the lower nibble, nothing else
 
 unsigned char data_6e4f8[40] = {
-	0x42, 0x40, 0x00, 0x00, 0x74, 0x00, 0x00, 0x00, 0x02, 0x40, 0x40, 0x00, 0x74, 0x00, 0x00, 0x00, 
+	0x42, 0x00, 0x00, 0x00, 0x74, 0x00, 0x00, 0x00, 0x02, 0x40, 0x40, 0x00, 0x74, 0x00, 0x00, 0x00, 
 	0x42, 0x40, 0x00, 0x00, 0x54, 0x01, 0x00, 0x00, 0x42, 0x40, 0x00, 0x00, 0x3B, 0x00, 0x00, 0x00, 
 	0x42, 0x40, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00
 };
+
+/*
+              0010 0010
+              0001 0010
+              0000 0010
+Normal yellow 0100 0010
+              1100 0010 green ring
+              1000 0010 octo
+
+ */
 
 void A27Emu_SongProcess(unsigned char* in_data, unsigned int in_length){
     unsigned short song_cmd = 0;
@@ -155,13 +159,15 @@ void A27Emu_SongProcess(unsigned char* in_data, unsigned int in_length){
             break;
         case 5:
         case 6:
-            if(!in_song){
-                in_song = 1;
-                
+            last_time_val = time_val;
+            interval_ctr++;
+            if(interval_ctr >= target_interval){
+                interval_ctr = 0;
+                time_val++;
             }
 
-
             // Unk Values
+           // if(time_val == 915){time_val = -1;}
             *(short*)(a27_state.data+4) = time_val;  
             *(short*)(a27_state.data+6) = time_val;
 
@@ -178,24 +184,59 @@ void A27Emu_SongProcess(unsigned char* in_data, unsigned int in_length){
             memset(a27_state.data+8,0x00,64);
 
             if(time_val == 10 && last_time_val != time_val){
+                //a27_state.data[0x28] = 1;
                 a27_state.data[0x28] = 7;
             }   
             
+                  
             
             if(time_val % 2){
-                a27_state.data[0x48] = 0x00;
+            //    a27_state.data[0x48] = 0x00;
+             //   a27_state.data[0x4F8] = 0x00;
             }else{
-                a27_state.data[0x48] = 0x02;
+               // a27_state.data[0x48] = 0x02;
+               // a27_state.data[0x4F8] = 0x02;
             }
             
+            memcpy(a27_state.data+0x48,data_6e48,sizeof(data_6e48));
 
+            //a27_state.data[0x48] = (iost.p1_drum_1) ? 0:0x02;
+            //memcpy(a27_state.data+0x70,data_6e48,sizeof(data_6e48));
+            //memcpy(a27_state.data+0x98,data_6e48,sizeof(data_6e48));
+            //memcpy(a27_state.data+0x4D0,data_6e48,sizeof(data_6e48));
+            //memcpy(a27_state.data+0x48,data_6e48,sizeof(data_6e48));
+            /*
+            a27_state.data[0x48] = (iost.p1_drum_1) ? 0x02:0;
+            a27_state.data[0x49] = (iost.p1_drum_2) ? 0x40:0x40;
+            a27_state.data[0x4A] = (iost.p1_drum_3) ? 0x40:0x40;
+            a27_state.data[0x4B] = (iost.p1_drum_4) ? 0:0;
+            
+ */
+            //*(short*)(a27_state.data+0x4C) = time_val;
+           // *(short*)(a27_state.data+0x48) = time_val;
+            //a27_state.data[0x48] = (unsigned char)(time_val / 10);
+            
+            //printf("State: %02X\n",time_val );
+            
+/*
+            
+            a27_state.data[0x62] = (iost.p2_drum_1) ? 0x02:0;
+            a27_state.data[0x62] = (iost.p2_drum_2) ? 0x04:0;
+            a27_state.data[0x62] = (iost.p2_drum_3) ? 0x08:0;
+            a27_state.data[0x62] = (iost.p2_drum_4) ? 0x10:0;
+            a27_state.data[0x62] = (iost.p2_drum_5) ? 0x82:0;
+            a27_state.data[0x62] = (iost.p2_drum_6) ? 0x42:0;
+            
+ */
+          // *(short*)(a27_state.data+0x64) = time_val*6;
+          // *(short*)(a27_state.data+0x6C) = time_val*2;
 
-            a27_state.data[0x49] = 0x40;
-            a27_state.data[0x4A] = 0x40;
-            a27_state.data[0x4B] = 0;
+           // a27_state.data[0x49] = 0x40;
+           // a27_state.data[0x4A] = 0x40;
+           // a27_state.data[0x4B] = 0;
 
            
-            *(short*)(a27_state.data+0x4B) = time_val;
+            //*(short*)(a27_state.data+0x4B) = time_val;
             
              
             // There are two blocks about 0x4B0 in size.
@@ -214,20 +255,48 @@ void A27Emu_SongProcess(unsigned char* in_data, unsigned int in_length){
             }
              */
 
-            a27_state.data[0x9A8] = 0x0C;
-            a27_state.data[0x9AA] = 0x0C;
-            a27_state.data[0x9E4] = 0x09;
-            a27_state.data[0x9E5] = 0x01;
-            a27_state.data[0x9E8] = 0x09;
-            a27_state.data[0x9E9] = 0x01;
-            a27_state.data[0x9EC] = 0x09;
-            a27_state.data[0x9ED] = 0x01;  
-            a27_state.data[0x9F0] = 0x09;
-            a27_state.data[0x9F1] = 0x01;                                    
-            a27_state.data[0x9F8] = song_id;
-            a27_state.data[0x9FA] = song_id;
-            a27_state.data[0x9B0] = 2;
+            // 9a8 is combo counter - 9aa is for p2
+    
+            *(unsigned short*)(a27_state.data+0x9A8) = 69;
+            *(unsigned short*)(a27_state.data+0x9AA) = 420;
+
+
+            // 9ab -> 0x9b0
+            
+            // Is Player N Playing (if set to 0, the score won't be recorded and the song won't move).
+            a27_state.data[0x9B0] = 1;
             a27_state.data[0x9B1] = 1;
+
+            // 9b2-> 9e4 somewhere in here are flags for when you hit the drum - will have to hook these up to the io
+            
+            //memset(a27_state.data+0x9c0,1,4);
+
+            
+            //a27_state.data[0x9B5] = (iost.p1_drum_2) ? 1:0;
+            // 0x9b4 blue great, 9b5-8 green great 9b9 red great 1 great, 2 cool, 3  nice, 4 poor, 5 lost, 6 bravo, 8 is the red effect for the byte? 9 is the same, 10 crashes so I guess we get 9 lol
+            /*
+            a27_state.data[0x9B6] = (iost.p1_drum_3) ? 1:0;
+            a27_state.data[0x9B7] = (iost.p1_drum_4) ? 1:0;
+            a27_state.data[0x9B8] = (iost.p1_drum_5) ? 1:0;
+            a27_state.data[0x9B9] = (iost.p1_drum_6) ? 1:0;
+             */
+            // 9e4 is player 1 score
+            *(unsigned int*)(a27_state.data+0x9E4) = 6969;
+            *(unsigned int*)(a27_state.data+0x9E8) = 14;
+            // These are score copies... not sure why
+            *(unsigned int*)(a27_state.data+0x9EC) = 0;
+            *(unsigned int*)(a27_state.data+0x9F0) = 0;
+
+
+            *(unsigned int*)(a27_state.data+0x9F4) = 0;
+            
+            // BGA Cues - 4 slots
+            *(unsigned short*)(a27_state.data+0x9F8) = 10;
+            *(unsigned short*)(a27_state.data+0x9FA) = 10;
+            *(unsigned short*)(a27_state.data+0x9FC) = 0;
+            *(unsigned short*)(a27_state.data+0x9FE) = 0;
+            
+
 
             
                 /*
@@ -238,12 +307,7 @@ void A27Emu_SongProcess(unsigned char* in_data, unsigned int in_length){
             }
              */
             a27_state.dwBufferSize = 0xA00;
-            last_time_val = time_val;
-            interval_ctr++;
-            if(interval_ctr >= target_interval){
-                interval_ctr = 0;
-                time_val++;
-            }
+
             //print_hex(a27_state.data,0x4C);
             break;
         
@@ -274,6 +338,19 @@ void A27Emu_SongProcess(unsigned char* in_data, unsigned int in_length){
 }
 
 
+
+int A27Emu_Open(void){
+    return FAKE_PCCARD_FD;
+}
+
+int A27Emu_Read(void* buf){
+    a27_set_checksum(&a27_state);
+    memcpy((unsigned char*)buf,&a27_state,A27_READ_HEADER_SIZE);
+    memcpy((unsigned char*)buf+A27_READ_HEADER_SIZE,a27_state.data,a27_state.dwBufferSize);
+    return PCCARD_READ_OK;    
+}
+
+
 void A27Emu_Reset(void){
     printf("[A27Emu::A27_Reset]\n");
     a27_state.dwBufferSize = 0;
@@ -300,49 +377,12 @@ void A27Emu_Reset(void){
 }
 
 
-ssize_t A27Emu_Read(unsigned char* buf){
-    a27_set_checksum(&a27_state);
-    memcpy((unsigned char*)buf,&a27_state,A27_READ_HEADER_SIZE);
-    memcpy((unsigned char*)buf+A27_READ_HEADER_SIZE,a27_state.data,a27_state.dwBufferSize);
-    return PCCARD_READ_OK;    
-}
 
-void A27InjectKeyboardIO(unsigned char* buf){
-    
-    
-    struct A27_Read_Message* msg = (struct A27_Read_Message*)buf;
-    msg->num_io_channels = 6;
-    unsigned int io_state = get_emulated_drumio_state(1);
-    msg->button_io[2] = io_state;
-    msg->button_io[3] = io_state;
-    msg->button_io[4] = io_state;
-    msg->button_io[5] = io_state;
-
-    msg->coin_inserted = get_emulated_coin_state(1);
-    
-    // Because we've modified the packet, we now have to reset the checksum.
-    a27_set_checksum(msg);
-}
-
-void A27PrintRead(ssize_t res,unsigned char* buf){
-    struct A27_Read_Message* msg = (struct A27_Read_Message*)buf;
-
-    printf("[A27Log] Read Res: %d Data Amt: %d\n",res,msg->dwBufferSize);
-    // TODO - Figure out when we're writing another packet and how we filter.
-    if(msg->dwBufferSize){
-        print_hex(msg->data,msg->dwBufferSize);
+int A27Emu_Write(const void* buf,size_t count){
+    if(count == 0){
+        A27Emu_Reset();
+        return 1;
     }
-}
-void A27PrintWrite(ssize_t res, const void* buf, size_t count){
-    struct A27_Write_Message* msg = (struct A27_Write_Message*)buf;
-    printf("[A27Log] Write Data Res: %d Amt: %d\n",res, msg->dwBufferSize);
-    // TODO - Figure out when we're writing another packet and how we filter.
-    if(msg->dwBufferSize){
-        print_hex(msg->data,msg->dwBufferSize);
-    }  
-}
-
-void A27Emu_Process(const void* buf,size_t count){
     struct A27_Write_Message* msg = (struct A27_Write_Message*)buf;
     if(msg->system_mode != a27_state.system_mode){
         printf("Change A27 System Mode to %d\n data: %d\n",msg->system_mode,msg->dwBufferSize );
@@ -411,5 +451,5 @@ void A27Emu_Process(const void* buf,size_t count){
     
 
     // TODO - All the Things!
-    return;
+    return 1;
 }
