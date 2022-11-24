@@ -5,7 +5,8 @@ static unsigned char m_baDecodeTable[10] = {6, 7, 3, 4, 8, 0, 1, 2, 9, 5};
 
 unsigned char A27DeriveChallenge(unsigned char inval){
     unsigned char target_value = inval % 10;
-    for(int i=0;i<sizeof(m_baDecodeTable);i++){
+    int i;
+    for(i=0;i<sizeof(m_baDecodeTable);i++){
         if(m_baDecodeTable[i] == target_value){
             return i;
         }

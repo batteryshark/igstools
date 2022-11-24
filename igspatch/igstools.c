@@ -15,6 +15,8 @@
 #define PCCARD_PATH "/dev/pccard0"
 #define UNPROTECT(addr,len) (mprotect((void*)(addr-(addr%len)),len,PROT_READ|PROT_WRITE|PROT_EXEC))
 
+const char* key_io_path = "./a27_keyio.so";
+const char* xkey_io_path = "./a27_xkeyio.so";
 // Some functions we need to detour
 static int (*real_open)(const char *, int) = NULL;
 static off_t (*real_lseek)(int fd, off_t offset, int whence) = NULL;
@@ -55,6 +57,7 @@ void loadlib_A27Emu(void){
     A27Emu_Open = dlsym(a27emu_lib,"A27Emu_Open");
     A27Emu_Read = dlsym(a27emu_lib,"A27Emu_Read");
     A27Emu_Write = dlsym(a27emu_lib,"A27Emu_Write");
+
     if(!A27Emu_Open || !A27Emu_Read || !A27Emu_Write){
         printf("[IGSTools::loadlib_A27Emu] Error: Could not bind to functions.\n");
         exit(-1);
@@ -81,8 +84,8 @@ void loadlib_A27Log(void){
     A27Log_init();
 }
 
-void loadlib_A27KeyIO(void){
-    void* a27keyio_lib = dlopen("./a27_keyio.so",RTLD_NOW);
+void loadlib_A27KeyIO(const char* keyio_path){
+    void* a27keyio_lib = dlopen(keyio_path,RTLD_NOW);
     printf("[IGSTools::init] Enabling A27 KeyboardIO...\n");
     if(!a27keyio_lib){
         printf("[IGSTools::loadlib_A27KeyIO] Error: Could not Open library.\n");
@@ -191,8 +194,8 @@ int open(const char * filename, int oflag){
 
 // --- Entrypoint ---
 void __attribute__((constructor)) initialize(void){
-    printf("[IGSTools::Startup] Starting up IGSTools ...\n");
     const char* vdriver;
+    printf("[IGSTools::Startup] Starting up IGSTools ...\n");
 
     // Patch game to windowed mode.
     if(getenv("PM_WINDOWED")){
@@ -218,7 +221,11 @@ void __attribute__((constructor)) initialize(void){
 
     // Check if PM_KEYBOARDIO is set - if so, enable io emulation.
     if(getenv("PM_KEYBOARDIO")){
-        loadlib_A27KeyIO();
+        loadlib_A27KeyIO(key_io_path);
+    }
+
+    if(getenv("PM_XKEYBOARDIO")){
+        loadlib_A27KeyIO(xkey_io_path);       
     }
 
     // Check if PM_A27LOG is set - if so, enable a27 logging mode.
@@ -235,4 +242,7 @@ void __attribute__((constructor)) initialize(void){
         UNPROTECT(0x80A7DDE,4096);
         memset((void*)0x80A7DDE,0x90,0x68);
     }
+
+   
 }
+

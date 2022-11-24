@@ -72,3 +72,4 @@ struct A27_Write_Message{
 	unsigned char ucLightPattern[4];
     unsigned char data[0x4000];
 };
+

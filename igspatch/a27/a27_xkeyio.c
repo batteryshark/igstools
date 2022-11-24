@@ -1,15 +1,25 @@
-// A27 IO Keyboard Emulator for PercussionMaster
+#define _GNU_SOURCE
+
+// A27 IO X11 Keyboard Emulator for PercussionMaster
 
 #include <stdio.h>
-#include <linux/input.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <dlfcn.h>
+#include <pthread.h>
 
-    
+// X11 includes
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
+#include <X11/Xatom.h>
+#include <X11/keysym.h>
+
 #include "a27_utils.h"
+
+
 
 enum{
     INP_P1_DRUM_4,
@@ -91,96 +101,87 @@ void update_iostate(void){
     state_read = 0;
 }
 
+
 static void *input_thread(void *arg){
-    struct input_event ev;
-    int selected_input;
-    int num_input_paths = sizeof(keyboard_evpaths)/ sizeof(const char*);
-    int fd;
-    int res;
+    int ksym;
+    int kstate;
+    Display *display;
+    XEvent event;
 
-    for(selected_input = 0; selected_input < num_input_paths; selected_input++){
-        fd = open(keyboard_evpaths[selected_input],0);
-        if(fd != -1){
-            printf("[IGSTools::KeyIO] Opened Event at: %s\n",keyboard_evpaths[selected_input]);
-            break;
-        }
-    }
-
-    if (fd == -1) {
-        printf("[IGSTools::KeyIO] Error Opening input. Possibly not running as elevated or not added to 'input' group.\n");
+    display = XOpenDisplay(NULL);
+    if (display == NULL){
+        printf("Cannot open display\n");
         exit(-1);
     }
- 
-    while(1){
-        res = read(fd, &ev, sizeof(ev));        
-        if (ev.type == EV_KEY) {
-            if(ev.code == KEY_ESC){ 
-                printf("[IGSTools::KeyIO] User Exited.\n");                
-                exit(0);
-            }
+    XGrabKeyboard(display, DefaultRootWindow(display),
+                 True, GrabModeAsync, GrabModeAsync, CurrentTime);
+    while (1){
+        XNextEvent(display, &event);
+
+        /* keyboard events */
+        if (event.type == KeyPress || event.type == KeyRelease){
             memcpy(&keyst_last,&keyst,sizeof(struct iostate));
-            switch(ev.code){
-                // System Controls
-                case KEY_1:
-                    keyst.sw_test = (ev.value) ? 1:0;
+            ksym = XLookupKeysym(&event.xkey, 0);         
+            switch(ksym){
+                // For Fun
+                case XK_Escape:
+                    printf("[IGSTools::KeyIO] User Exited.\n");                
+                    exit(0);
                     break;
-                case KEY_2:
-                    keyst.sw_service = (ev.value) ? 1:0;
-                    break;                    
-                case KEY_5:
-                    keyst.coin = (ev.value) ? 1:0;
+                // System Switches
+                case XK_1:
+                    keyst.sw_test = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_6:
-                    keyst.hidden_sw[0] = (ev.value) ? 1:0;
+                case XK_2:
+                    keyst.sw_service = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_7:
-                    keyst.hidden_sw[1] = (ev.value) ? 1:0;
-                    break;                    
-                // Player 1 Controls
-                case KEY_Z:
-                    keyst.p1_drum[0] = (ev.value) ? 1:0;
-                    break; 
-                case KEY_X: 
-                    keyst.p1_drum[1] = (ev.value) ? 1:0;
+                case XK_5:
+                    keyst.coin = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_C:
-                    keyst.p1_drum[2] = (ev.value) ? 1:0;
+                // Player 1 
+                case XK_z:
+                    keyst.p1_drum[0] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_V:
-                    keyst.p1_drum[3] = (ev.value) ? 1:0;
+                case XK_x:
+                    keyst.p1_drum[1] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_B:
-                    keyst.p1_drum[4] = (ev.value) ? 1:0;
-                    break;                    
-                case KEY_N: 
-                    keyst.p1_drum[5] = (ev.value) ? 1:0;
+                case XK_c:
+                    keyst.p1_drum[2] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                // Player 2 Controls
-                case KEY_A:
-                    keyst.p2_drum[0] = (ev.value) ? 1:0; 
+                case XK_v:
+                    keyst.p1_drum[3] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_S:
-                    keyst.p2_drum[1] = (ev.value) ? 1:0; 
+                case XK_b:
+                    keyst.p1_drum[4] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_D:
-                    keyst.p2_drum[2] = (ev.value) ? 1:0; 
+                case XK_n:
+                    keyst.p1_drum[5] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_F:
-                    keyst.p2_drum[3] = (ev.value) ? 1:0; 
+                // Player 2 
+                case XK_a:
+                    keyst.p2_drum[0] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_G:
-                    keyst.p2_drum[4] = (ev.value) ? 1:0; 
+                case XK_s:
+                    keyst.p2_drum[1] = (event.type == KeyPress) ? 1 : 0;
                     break;
-                case KEY_H:
-                    keyst.p2_drum[5] = (ev.value) ? 1:0; 
+                case XK_d:
+                    keyst.p2_drum[2] = (event.type == KeyPress) ? 1 : 0;
                     break;
+                case XK_f:
+                    keyst.p2_drum[3] = (event.type == KeyPress) ? 1 : 0;
+                    break;
+                case XK_g:
+                    keyst.p2_drum[4] = (event.type == KeyPress) ? 1 : 0;
+                    break;
+                case XK_h:
+                    keyst.p2_drum[5] = (event.type == KeyPress) ? 1 : 0;
+                    break;                                                                                               
                 default:
-                    break;
+                break;
             }            
         }
-    update_iostate();
+        update_iostate();
     }
-    
 }
 
 
@@ -260,7 +261,7 @@ void A27KeyIO_Inject(unsigned char* buf){
 
 void A27KeyIO_Init(void){
     memset(&keyst,0,sizeof(struct iostate));
-    memset(&keyst_last,0,sizeof(struct iostate));
+    memset(&keyst_last,0,sizeof(struct iostate));    
     pthread_create(&hthread, 0, input_thread, 0);
 }
 
