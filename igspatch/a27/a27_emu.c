@@ -16,8 +16,8 @@ const int fake_pccard_fd = 0x0A271337;
 
 static struct A27_Read_Message a27_state = {0};
 static unsigned char a27_emu_iotest[68] = {0};
-static unsigned char a27_emu_lighttest[68] = {0};
 
+static unsigned int (*A27KeyIO_GetSwitchState)(void) = NULL;
 static unsigned short (*A27KeyIO_GetCoinCounter)(void) = NULL;
 static void (*A27KeyIO_GetTestBuffer)(unsigned char* io_test_buffer) = NULL;
 
@@ -30,7 +30,8 @@ void load_a27keyio_emu(){
 
     A27KeyIO_GetCoinCounter = dlsym(a27keyio_lib,"A27KeyIO_GetCoinCounter");
     A27KeyIO_GetTestBuffer = dlsym(a27keyio_lib,"A27KeyIO_GetTestBuffer");
-    if(!A27KeyIO_GetTestBuffer || !A27KeyIO_GetCoinCounter){
+    A27KeyIO_GetSwitchState = dlsym(a27keyio_lib,"A27KeyIO_GetSwitchState");
+    if(!A27KeyIO_GetTestBuffer || !A27KeyIO_GetCoinCounter || !A27KeyIO_GetSwitchState){
         printf("[IGSTools::loadlib_A27KeyIO] Error: Could not bind to functions.\n");
         exit(-1);
     }
@@ -59,6 +60,86 @@ void mode_process(const unsigned char* in_data){
     *(unsigned short*)(a27_state.data+2) = val;
 
     a27_state.dwBufferSize = 4;
+}
+
+enum light_test_offsets{
+    LIGHT_2P_3 = 4,
+    LIGHT_YB79,
+    LIGHT_YB810,
+    LIGHT_2P_1,
+    LIGHT_2P_2,
+    LIGHT_1P_1 = 12,
+    LIGHT_1P_2,
+    LIGHT_1P_3,
+    LIGHT_YA1,
+    LIGHT_YA2,
+    LIGHT_YA3,
+    LIGHT_YA4,
+};
+
+unsigned char light_test_1_offsets[] = {LIGHT_YA1,LIGHT_YA2,LIGHT_YA3,LIGHT_YA4,LIGHT_YB79,LIGHT_YB810};
+// Light Test 2 (the indicators for drum lights) aren't used in the automated test rotation. I think you have to hit the drum to activate those.
+unsigned char light_test_2_offsets[] = {LIGHT_1P_1,LIGHT_1P_2,LIGHT_1P_3,LIGHT_2P_1,LIGHT_2P_2,LIGHT_2P_3};
+unsigned char light_test_mode = 0;
+unsigned char light_test_offset = 0;
+
+
+unsigned char light_test_strobe_count = 0;
+unsigned char light_test_strobe_max = 60;
+
+void A27_ProcessLightTest(const unsigned char* wdata,unsigned int wsize){
+
+    // Not sure if this will ever be needed...
+    if(wsize < 4){return;}
+    unsigned short status = *(unsigned short*)wdata;
+    unsigned short subcmd = *(unsigned short*)(wdata+2);
+    int light_test_len_offset = (light_test_mode) ? sizeof(light_test_2_offsets) : sizeof(light_test_1_offsets);
+    unsigned char* selected_offset = (light_test_mode) ? light_test_2_offsets : light_test_1_offsets;
+    if(status == 1 && subcmd == 0x41 && wsize == 68){
+   
+        light_test_strobe_count++;
+        if(light_test_strobe_count == light_test_strobe_max){
+            light_test_strobe_count = 0;
+            light_test_offset++;
+            
+            if(light_test_offset == light_test_len_offset){
+                light_test_offset = 0;
+            }
+        }
+        memset(a27_state.data,0x00,68);
+
+        a27_state.dwBufferSize = 68;
+        *(unsigned short*)a27_state.data = 1;
+        *(unsigned short*)(a27_state.data+2) = 4;                      
+        a27_state.data[selected_offset[light_test_offset]] = 1;  
+
+        unsigned int swst = A27KeyIO_GetSwitchState();
+        a27_state.data[LIGHT_1P_1] = A27IO_ISSET(swst,INP_P1_DRUM_5) ? 1 : 0;
+        a27_state.data[LIGHT_1P_2] = A27IO_ISSET(swst,INP_P1_DRUM_6) ? 1 : 0;
+        a27_state.data[LIGHT_1P_3] = A27IO_ISSET(swst,INP_P1_DRUM_3) ? 1 : 0;
+        a27_state.data[LIGHT_2P_1] = A27IO_ISSET(swst,INP_P2_DRUM_5) ? 1 : 0;
+        a27_state.data[LIGHT_2P_2] = A27IO_ISSET(swst,INP_P2_DRUM_6) ? 1 : 0;
+        a27_state.data[LIGHT_2P_3] = A27IO_ISSET(swst,INP_P2_DRUM_3) ? 1 : 0;
+
+        return;
+    }
+    switch(subcmd){
+        case 0:
+        case 2:
+        case 0x41:
+            light_test_mode = 0;
+            light_test_offset = 0;
+            a27_state.dwBufferSize = 4;
+            *(unsigned short*)a27_state.data = 0;
+            *(unsigned short*)(a27_state.data+2) = 4;
+            break;
+        
+        default:
+            printf("Unhandled Light SubCmd: %d\n", subcmd);
+            exit(-1);
+            break;
+    }
+
 }
 
 static int interval_ctr = 0;
@@ -308,10 +389,7 @@ void A27Emu_Process(const struct A27_Write_Message* msg){
             A27KeyIO_GetTestBuffer(a27_state.data);
             break;
         case A27_MODE_LIGHT_TEST:
-            //print_hex(msg->data,msg->dwBufferSize);
-            // TODO - Light Test Packets
-            a27_state.dwBufferSize = sizeof(a27_emu_lighttest);
-            memcpy(a27_state.data,a27_emu_lighttest,sizeof(a27_emu_lighttest));
+            A27_ProcessLightTest(msg->data,msg->dwBufferSize);
             break;
         case A27_MODE_COUNTER_TEST:
             a27_state.dwBufferSize = 4;

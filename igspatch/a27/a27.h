@@ -21,6 +21,27 @@ enum A27_Region{
     REGION_RUSSIA
 };
 
+#define A27IO_ISSET(v,b) ((v >> b) & 0x01)
+
+enum A27_IOLayout{
+    INP_P1_DRUM_4,
+    INP_P1_DRUM_1,
+    INP_P1_DRUM_2,
+    INP_HIDDEN_1,
+    INP_HIDDEN_2,
+    INP_P1_DRUM_5=5,
+    INP_P1_DRUM_6,
+    INP_P1_DRUM_3,
+    INP_P2_DRUM_1,
+    INP_P2_DRUM_2,
+    INP_P2_DRUM_3,
+    INP_P2_DRUM_4,
+    INP_P2_DRUM_5,
+    INP_P2_DRUM_6,
+    INP_SW_SERVICE=30,
+    INP_SW_TEST
+};
+
 enum A27_Mode{
 	A27_MODE_TEST = 1,
 	A27_MODE_KEY_TEST = 2,

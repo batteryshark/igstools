@@ -11,24 +11,7 @@
     
 #include "a27_utils.h"
 
-enum{
-    INP_P1_DRUM_4,
-    INP_P1_DRUM_1,
-    INP_P1_DRUM_2,
-    INP_HIDDEN_1,
-    INP_HIDDEN_2,
-    INP_P1_DRUM_5=5,
-    INP_P1_DRUM_6,
-    INP_P1_DRUM_3,
-    INP_P2_DRUM_1,
-    INP_P2_DRUM_2,
-    INP_P2_DRUM_3,
-    INP_P2_DRUM_4,
-    INP_P2_DRUM_5,
-    INP_P2_DRUM_6,
-    INP_SW_SERVICE=30,
-    INP_SW_TEST
-};
+
 
 const char* keyboard_evpaths[] = {
     "/dev/input/keyboard",
@@ -257,6 +240,8 @@ void A27KeyIO_Inject(unsigned char* buf){
     A27SetChecksum(msg);
     
 }
+
+unsigned int A27KeyIO_GetSwitchState(void){return switch_state;}
 
 void A27KeyIO_Init(void){
     memset(&keyst,0,sizeof(struct iostate));
