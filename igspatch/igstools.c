@@ -175,6 +175,13 @@ off_t lseek(int fd, off_t offset, int whence){
     return res;
 }
 
+static char* game_mode[] = {
+    "Getting Started",
+};
+
+static char* yes_txt = "Yes\0";
+
+
 // If we're accessing the PCCARD Device, give a fake fd if it's emulated. If not, record the real one and passthrough.
 int open(const char * filename, int oflag){
     if (real_open == NULL){
@@ -190,6 +197,111 @@ int open(const char * filename, int oflag){
         return a27_fd;
     }
     return real_open(filename, oflag);
+}
+
+
+
+struct estr_entry{
+    int addr;
+    char* str;
+};
+
+static char* noyes[] = {
+    "No",
+    "Yes"
+};
+
+static char* yesno[] = {
+    "Yes",
+    "No"
+};
+
+static char* speed_options[] = {
+    "Normal",
+    "S1x",
+    "S2x",
+    "S3x",
+    "S4x"
+};
+
+static char* cloak_options[] = {
+    "Normal",
+    "1x",
+    "2x",
+    "3x"
+};
+
+static char* record_options[] = {
+    "None",
+    "Record",
+    "Play"
+};
+
+static char* judgement_options[] = {
+    "Easy",
+    "Normal",
+    "Hard",
+    "Expert"
+};
+
+static char* difficulty_options[] = {
+    "Training",
+    "Elementary",
+    "Intermediate",
+    "Advanced",
+    "Super Advanced",
+    "Challenge",
+    "Drum King",
+    "END",
+    "Battle"
+};
+
+
+
+static struct estr_entry test_menu_english[] = {
+    {0x0807B1BD,"[%d:%2d] Notes:%d Tempo:%d Moves:%d"},
+    {0x0807B1EA,"Stars: %02d SecID: %d Difficulty: %s"},
+    {0x0807B202,"Select Song"},
+    {0x0807B22B,(char*)difficulty_options},
+    {0x0807B230,"Mode: %s"},
+    {0x0807B256,(char*)noyes},
+    {0x0807B265,"%dP Enabled: %s"},
+    {0x0807B2AD,"%dP Autoplay: %s"},
+    {0x0807B2D3,(char*)speed_options},
+    {0x0807B2DF,"%dP Speed Mod: %s"},
+    {0x0807B308,(char*)cloak_options},
+    {0x0807B30E,"%dP Cloak Mod: %s"},
+    {0x0807B334,"%dP Noteskin: %d"},
+    {0x0807B359,(char*)record_options},
+    {0x0807B35E,"KeyRecord: %s"},
+    {0x0807B386,"File Index: %d"},
+    {0x0807B3AF,(char*)yesno},
+    {0x0807B3B4,"Keysounds: %s"},
+    {0x0807B3E0,"Player Vol: %d"},
+    {0x0807B40C,"Song Vol: %d"},
+    {0x0807B438,"BG Vol: %d"},
+    {0x0807B461,(char*)judgement_options},
+    {0x0807B466,"Judgement: %s"},
+};
+
+
+
+// Enable Hidden Test Menu
+void enable_test_mode(void){
+    int num_str_entries;
+    int curr_entry;
+    void** cur_addr;
+    // Swap out loading the operator menu for the hidden test menu.
+    UNPROTECT(0x8056A79,4096);
+    *(unsigned int*)0x8056A79 = 0x1FE07;
+
+    num_str_entries = sizeof(test_menu_english) / sizeof(struct estr_entry);
+    for(curr_entry=0; curr_entry < num_str_entries; curr_entry++){
+        UNPROTECT(test_menu_english[curr_entry].addr,4096);
+        cur_addr = (void*)test_menu_english[curr_entry].addr;
+        *cur_addr = test_menu_english[curr_entry].str;
+    }
+
 }
 
 // --- Entrypoint ---
@@ -242,7 +354,15 @@ void __attribute__((constructor)) initialize(void){
         UNPROTECT(0x80A7DDE,4096);
         memset((void*)0x80A7DDE,0x90,0x68);
     }
+    if(getenv("PM_TEST")){
+        enable_test_mode();
+    }
 
-   
+        if(getenv("PM_TRACKBALL")){
+        UNPROTECT(0x8056A78,4096);
+        *(int*)(0x8056A78+1) = (0x08069768 - (0x8056A78 + 5));
+    }
 }
 
+    
+    

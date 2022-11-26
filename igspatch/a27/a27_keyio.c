@@ -56,8 +56,8 @@ void update_iostate(void){
     (keyst.p2_drum[5] && !keyst_last.p2_drum[5])  ? (switch_state |= (1 << INP_P2_DRUM_6)) : (switch_state &= ~(1 << INP_P2_DRUM_6));
     
     // Hidden
-    keyst.hidden_sw[0] ? (switch_state |= (1 << INP_HIDDEN_1))    : (switch_state &= ~(1 << INP_HIDDEN_1));
-    keyst.hidden_sw[1] ? (switch_state |= (1 << INP_HIDDEN_2))    : (switch_state &= ~(1 << INP_HIDDEN_2));
+    keyst.hidden_sw[0] ? (switch_state |= (1 << INP_HIDDEN_3))    : (switch_state &= ~(1 << INP_HIDDEN_3));
+    keyst.hidden_sw[1] ? (switch_state |= (1 << INP_HIDDEN_4))    : (switch_state &= ~(1 << INP_HIDDEN_4));
 
     // Switches
     (keyst.sw_service && !keyst_last.sw_service) ? (switch_state |= (1 << INP_SW_SERVICE)) : (switch_state &= ~(1 << INP_SW_SERVICE));        
@@ -118,7 +118,9 @@ static void *input_thread(void *arg){
                     break;
                 case KEY_7:
                     keyst.hidden_sw[1] = (ev.value) ? 1:0;
-                    break;                    
+                    break;  
+                case KEY_8:
+                    break;                  
                 // Player 1 Controls
                 case KEY_Z:
                     keyst.p1_drum[0] = (ev.value) ? 1:0;
@@ -248,4 +250,3 @@ void A27KeyIO_Init(void){
     memset(&keyst_last,0,sizeof(struct iostate));
     pthread_create(&hthread, 0, input_thread, 0);
 }
-

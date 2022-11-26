@@ -20,33 +20,6 @@
 #include "a27_utils.h"
 
 
-
-enum{
-    INP_P1_DRUM_4,
-    INP_P1_DRUM_1,
-    INP_P1_DRUM_2,
-    INP_HIDDEN_1,
-    INP_HIDDEN_2,
-    INP_P1_DRUM_5=5,
-    INP_P1_DRUM_6,
-    INP_P1_DRUM_3,
-    INP_P2_DRUM_1,
-    INP_P2_DRUM_2,
-    INP_P2_DRUM_3,
-    INP_P2_DRUM_4,
-    INP_P2_DRUM_5,
-    INP_P2_DRUM_6,
-    INP_SW_SERVICE=30,
-    INP_SW_TEST
-};
-
-const char* keyboard_evpaths[] = {
-    "/dev/input/keyboard",
-    "/dev/input/by-path/platform-i8042-serio-0-event-kbd",
-    "/run/kbdhook"
-};
-
-
 static struct iostate {
     unsigned char hidden_sw[2];
     unsigned char coin;
@@ -83,8 +56,8 @@ void update_iostate(void){
     (keyst.p2_drum[5] && !keyst_last.p2_drum[5])  ? (switch_state |= (1 << INP_P2_DRUM_6)) : (switch_state &= ~(1 << INP_P2_DRUM_6));
     
     // Hidden
-    keyst.hidden_sw[0] ? (switch_state |= (1 << INP_HIDDEN_1))    : (switch_state &= ~(1 << INP_HIDDEN_1));
-    keyst.hidden_sw[1] ? (switch_state |= (1 << INP_HIDDEN_2))    : (switch_state &= ~(1 << INP_HIDDEN_2));
+    keyst.hidden_sw[0] ? (switch_state |= (1 << INP_HIDDEN_3))    : (switch_state &= ~(1 << INP_HIDDEN_3));
+    keyst.hidden_sw[1] ? (switch_state |= (1 << INP_HIDDEN_4))    : (switch_state &= ~(1 << INP_HIDDEN_4));
 
     // Switches
     (keyst.sw_service && !keyst_last.sw_service) ? (switch_state |= (1 << INP_SW_SERVICE)) : (switch_state &= ~(1 << INP_SW_SERVICE));        
@@ -138,6 +111,12 @@ static void *input_thread(void *arg){
                 case XK_5:
                     keyst.coin = (event.type == KeyPress) ? 1 : 0;
                     break;
+                case XK_6:
+                    keyst.hidden_sw[0] = (event.type == KeyPress) ? 1:0;
+                    break;
+                case XK_7:
+                    keyst.hidden_sw[1] = (event.type == KeyPress) ? 1:0;
+                    break;                    
                 // Player 1 
                 case XK_z:
                     keyst.p1_drum[0] = (event.type == KeyPress) ? 1 : 0;

@@ -17,9 +17,32 @@ const int fake_pccard_fd = 0x0A271337;
 static struct A27_Read_Message a27_state = {0};
 static unsigned char a27_emu_iotest[68] = {0};
 
+static struct _trackball_state{
+    struct trackball_data p1;
+    struct trackball_data p2;
+}trackball_state;
+
 static unsigned int (*A27KeyIO_GetSwitchState)(void) = NULL;
 static unsigned short (*A27KeyIO_GetCoinCounter)(void) = NULL;
 static void (*A27KeyIO_GetTestBuffer)(unsigned char* io_test_buffer) = NULL;
+
+void print_hex(unsigned char* data, unsigned int len) {
+        unsigned int i;
+	for (i = 0; i < len; i++) {
+		printf("%02X", data[i]);
+	}
+	printf("\n");
+}
+
+struct test_text{
+	unsigned short enabled_flag;
+	unsigned short counter;
+	char text[256];
+};
+
+static struct _test_buffer{
+	struct test_text tx[21];
+}a27_test_readwrite_buffer;
 
 void load_a27keyio_emu(){
     void* a27keyio_lib = dlopen("./a27_keyio.so",RTLD_NOW);    
@@ -86,7 +109,8 @@ unsigned char light_test_offset = 0;
 
 unsigned char light_test_strobe_count = 0;
 unsigned char light_test_strobe_max = 60;
-
+ 
+   
 void A27_ProcessLightTest(const unsigned char* wdata,unsigned int wsize){
 
     // Not sure if this will ever be needed...
@@ -146,6 +170,27 @@ static int interval_ctr = 0;
 static const int target_interval = 6;
 static int time_val = -1;
 static int last_time_val = -1;
+static struct song_packet_3 sset = {0x00};
+
+void print_song_setting(void){
+    printf("--- New Song Setting ---\n");
+    printf("State: %d\n",sset.state);
+    printf("Stage: %d GameMode: %d KeyRecord:%d\n",sset.stage_num,sset.game_mode,sset.key_record_mode);
+    printf("P1 Enable: %d Version: %d SongID: %d\n",sset.p1_enable,sset.p1_songversion,sset.p1_songid);
+    printf("P1 Speed: %d Cloak: %d Noteskin: %d Auto: %d\n",sset.p1_speed,sset.p1_cloak,sset.p1_noteskin,sset.p1_autoplay);
+    printf("P2 Enable: %d Version: %d SongID: %d\n",sset.p2_enable,sset.p2_songversion,sset.p2_songid);
+    printf("P2 Speed: %d Cloak: %d Noteskin: %d Auto: %d\n",sset.p2_speed,sset.p2_cloak,sset.p2_noteskin,sset.p2_autoplay);
+    printf("Scoring: G: %d C: %d N: %d P: %d\n",sset.judge_great,sset.judge_cool,sset.judge_nice,sset.judge_poor);
+    printf("P1 Rating: %d P2 Rating: %d\n",sset.p1_rating,sset.p2_rating);
+    printf("LevelRate P1: %.2f %.2f %.2f %.2f %.2f %.2f\n",sset.level_rate_p1[0],sset.level_rate_p1[1],sset.level_rate_p1[2],sset.level_rate_p1[3],sset.level_rate_p1[4],sset.level_rate_p1[5]);
+    printf("LevelRate P2: %.2f %.2f %.2f %.2f %.2f %.2f\n",sset.level_rate_p2[0],sset.level_rate_p2[1],sset.level_rate_p2[2],sset.level_rate_p2[3],sset.level_rate_p2[4],sset.level_rate_p2[5]);
+    printf("IDK 1 [Probably Padding]: ");
+    print_hex(sset.idk_1,8);
+    printf("IDK P1: %d P2: %d\n",sset.idk_p1_1,sset.idk_p1_2);
+    printf("Is Non Challenge Mode: %d\n",sset.is_non_challengemode);
+    printf("Song Mode: %d\n",sset.song_mode);
+    printf("--- End Song Setting ---\n");
+}
 
 unsigned char data_6e48[] = {
 	0x02, 0x81, 0x00, 0x00, 0x30, 0x01, 0x00, 0x00, // 2 is blue, 0x42 is center 
@@ -163,8 +208,13 @@ void A27Emu_SongProcess(const unsigned char* in_data, unsigned int in_length){
     
 
     switch(song_cmd){
+        case 0: // Playback Header Upload
+        case 1: // Playback Body Upload
+            break;
         case 3:
             // Song Request Packet - 96 bytes detailing the song id, difficulty, etc.
+            memcpy(&sset,in_data,in_length);
+            print_song_setting();
             *(unsigned short*)a27_state.data = 3;
             a27_state.dwBufferSize = 0xA00;        
 
@@ -384,6 +434,15 @@ void A27Emu_Process(const struct A27_Write_Message* msg){
         case 27:
             a27_state.dwBufferSize = msg->dwBufferSize;
             break;
+        case A27_MODE_TEST:
+            if(a27_test_readwrite_buffer.tx[1].counter == 0xFFFF){
+                a27_test_readwrite_buffer.tx[1].counter = 0;
+            }
+            a27_test_readwrite_buffer.tx[1].counter++;
+
+            a27_state.dwBufferSize = msg->dwBufferSize;
+            memcpy(a27_state.data,&a27_test_readwrite_buffer,sizeof(a27_test_readwrite_buffer));
+            break;
         case A27_MODE_KEY_TEST:
             a27_state.dwBufferSize = sizeof(a27_emu_iotest);
             A27KeyIO_GetTestBuffer(a27_state.data);
@@ -412,6 +471,26 @@ void A27Emu_Process(const struct A27_Write_Message* msg){
             *(unsigned short*)a27_state.data = 0;
             *(unsigned short*)(a27_state.data+2) = 0;
             break;
+        case A27_MODE_TRACKBALL:
+            a27_state.system_mode = A27_MODE_TRACKBALL;
+            a27_state.dwBufferSize = sizeof(struct _trackball_state);
+            
+            trackball_state.p1.direction = 2;
+            trackball_state.p1.vx = 420;
+            trackball_state.p1.vy = 421;
+            trackball_state.p1.pulse = 1;
+        
+            trackball_state.p2.player_index = 1;
+            trackball_state.p2.direction = 4;
+            trackball_state.p2.vx = 573;
+            trackball_state.p2.vy = 574;
+            trackball_state.p2.press = 1;
+            trackball_state.p2.pulse = 1;
+
+            
+            memcpy(a27_state.data,&trackball_state,sizeof(struct _trackball_state));
+           
+            break;
         default:
             printf("Unhandled A27 Operation: %d\n", msg->system_mode);
             exit(-1);
@@ -430,7 +509,9 @@ void A27Emu_Reset(void){
     for(int i = 0; i < 6; i++){
         a27_state.button_io[i] = 0;
     }
-    a27_state.num_io_channels = A27_IO_MAX_CHANNELS;
+    // Technically, the initial reads from the card start the number of IO channels at 6,
+    // But once the game starts responding to actual packets, this gets set to 1 or sometimes 3?
+    a27_state.num_io_channels = 1;
     a27_state.protection_value = rand() & 0xFF;
     a27_state.protection_offset = A27DeriveChallenge(a27_state.protection_value);
     a27_state.game_region = REGION_AMERICA;
@@ -443,6 +524,19 @@ void A27Emu_Reset(void){
     a27_state.pci_card_version = PCI_CARD_VERSION;
     memset(a27_state.a27_message,0,sizeof(a27_state.a27_message));
     memset(a27_state.data,0,sizeof(a27_state.data));
+
+    // Reset the Test Read/Write Buffers
+    a27_test_readwrite_buffer.tx[0].enabled_flag = 0;
+    a27_test_readwrite_buffer.tx[0].counter = 0;
+    strcpy(a27_test_readwrite_buffer.tx[0].text,"Test1");
+    a27_test_readwrite_buffer.tx[1].enabled_flag = 1;
+    a27_test_readwrite_buffer.tx[1].counter = 0;
+    strcpy(a27_test_readwrite_buffer.tx[0].text,"Test2");
+
+    // Reset Trackball State.
+    memset(&trackball_state,0x00,sizeof(struct _trackball_state));
+
+
 }
 
 
