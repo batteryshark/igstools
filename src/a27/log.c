@@ -1,8 +1,10 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+
 
 static int log_lock = 0;
 static char log_path[256] = {0x00};
@@ -32,40 +34,27 @@ void close_log_file(FILE* fp){
     log_lock = 0;
 }
 
-void A27Log_Seek(int offset, int result){
-    return; // Disabling Seeks for Now
-    /*
-    long long tsm = current_timestamp();
-    char flag[] = "logs";
-    FILE* fp = open_log_file();
-    fwrite(&tsm,sizeof(tsm),1,fp);
-    fwrite(flag,4,1,fp);
-    fwrite(&offset,sizeof(int),1,fp);
-    fwrite(&result,sizeof(int),1,fp);
-    close_log_file(fp);
-    */
-}
 
-void A27Log_Write(int result, unsigned int count, const void* buffer){
+void A27Log_Write(off_t offset, const void* buffer, size_t count){
     long long tsm = current_timestamp();
     char flag[] = "logw";
-    FILE* fp = open_log_file();   
+    FILE* fp = open_log_file();
+    fwrite(&offset,sizeof(off_t),1,fp);    
     fwrite(flag,4,1,fp);
     fwrite(&tsm,sizeof(tsm),1,fp);    
-    fwrite(&result,sizeof(int),1,fp);
     fwrite(&count,sizeof(unsigned int),1,fp);
     fwrite(buffer,count,1,fp);    
     close_log_file(fp);
 }
 
-void A27Log_Read(int result, void* buffer){
+void A27Log_Read(off_t offset,void* buffer){
     long long tsm = current_timestamp();
     char flag[] = "logr";
     FILE* fp = open_log_file();    
     size_t count = 132 + *(unsigned int*)buffer;
+    fwrite(&offset,sizeof(off_t),1,fp);
     fwrite(flag,4,1,fp);
     fwrite(&tsm,sizeof(tsm),1,fp);    
-    fwrite(&result,sizeof(int),1,fp);
     fwrite(&count,sizeof(size_t),1,fp);
     fwrite(buffer,count,1,fp);
     close_log_file(fp);
