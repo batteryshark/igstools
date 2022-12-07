@@ -223,6 +223,8 @@ void Program_15_Song(const unsigned char* in_data, unsigned int in_length){
             Song_MainGameProcess(in_data,&a27_msg);
             break;
         case A27_SONGMODE_RESULT:
+            printf("[Song_ResultProcess] :");
+            PrintHex((unsigned char*)in_data,in_length);
             Song_ResultProcess(in_data,&a27_msg);
             break;
         default:

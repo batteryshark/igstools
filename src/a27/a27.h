@@ -172,6 +172,84 @@ struct maingame_setting{
     unsigned char song_mode;
 };
 
+// This is basically a truncated start of the maingame setting struct.
+typedef struct _SONGRESULT_REQ{
+    unsigned short cmd;
+    unsigned char state;
+    unsigned char stage_num;
+    unsigned char game_mode;
+    unsigned char key_record_mode;
+    unsigned char p1_enable;
+    unsigned char p2_enable;
+    unsigned char p1_autoplay;
+    unsigned char p2_autoplay;
+    unsigned char p1_songversion;
+    unsigned char p2_songversion;
+    unsigned short p1_songid;
+    unsigned short p2_songid;
+    unsigned char p1_speed;
+    unsigned char p1_cloak;
+    unsigned char p1_noteskin;
+    unsigned char align_1;
+}SONGRESULT_REQUEST;
+
+
+typedef struct _SONGRESULT{
+    unsigned short cmd;
+    unsigned char song_clear;
+    unsigned char enable_bonus_stage;
+    unsigned short p1_num_notes;
+    unsigned short p2_num_notes;
+    unsigned short p1_idk_1;
+    unsigned short p2_idk_1;
+    unsigned short p1_great;
+    unsigned short p1_cool;
+    unsigned short p1_nice;
+    unsigned short p1_poor;
+    unsigned short p1_lost;
+    unsigned short p2_great;
+    unsigned short p2_cool;
+    unsigned short p2_nice;
+    unsigned short p2_poor;
+    unsigned short p2_lost;
+    unsigned char  idk_block[0x14];
+    unsigned short p1_max_combo;  
+    unsigned short p2_max_combo;
+    unsigned short p1_fever_beat;
+    unsigned short p2_fever_beat;
+    unsigned int   p1_idk_2;    
+    unsigned int   p2_idk_2;
+    unsigned int   p1_score;
+    unsigned int   p2_score;
+    unsigned char  p1_grade;
+    unsigned char  p2_grade;
+    unsigned char  p1_message;
+    unsigned char  p2_message;
+}SongResult;
+
+enum SongResultMessage{
+    SongResulMessage_SOSO,   // This is just beating the song.
+    SongResulMessage_BRAVO,  // Adds +15% to score <-- I think this is FC
+    SongResulMessage_PERFECT // Adds +25% to score <-- I think this is PFC
+};
+
+enum SongResultGrade{
+    ResultGradeS,
+    ResultGradeAPlus,
+    ResultGradeA,
+    ResultGradeAMinus,
+    ResultGradeBPlus,
+    ResultGradeB,
+    ResultGradeBMinus,
+    ResultGradeCPlus,
+    ResultGradeC,
+    ResultGradeCMinus,
+    ResultGradeDPlus,
+    ResultGradeD,
+    ResultGradeDMinus,
+    ResultGradeE
+};
+
 typedef struct _TEST_READWRITE_DATA{
 	unsigned short enabled_flag;
 	unsigned short counter;
