@@ -3,6 +3,7 @@
 
 unsigned int KeyIO_GetSwitches(void);
 unsigned int KeyIO_GetCoinState(void);
-void KeyIO_Inject(unsigned char* buf);
+void KeyIO_InjectWrite(unsigned char* buf);
+void KeyIO_InjectRead(unsigned char* buf);
 void KeyIO_Init(void);
 #endif

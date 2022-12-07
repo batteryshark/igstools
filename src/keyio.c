@@ -243,10 +243,31 @@ unsigned int KeyIO_GetCoinState(void){
     return keystate.coin;
 }
 
-void KeyIO_Inject(unsigned char* buf){
+void KeyIO_InjectWrite(unsigned char* buf){
     struct A27_Write_Message* msg = (struct A27_Write_Message*)buf;
     msg->key_input = KeyIO_GetSwitches();
     A27SetWriteChecksum(msg);
+}
+
+void KeyIO_InjectRead(unsigned char* buf){
+    unsigned int swst;
+	struct A27_Read_Message* msg = (struct A27_Read_Message*)buf;
+	
+    swst = KeyIO_GetSwitches();
+
+    msg->coin_inserted = KeyIO_GetCoinState();
+    
+	//msg->num_io_channels = 6;
+	// Try this first.
+	msg->num_io_channels = 1;
+	msg->button_io[0] = swst;
+	/*
+    msg->button_io[2] = swst;
+    msg->button_io[3] = swst;
+    msg->button_io[4] = swst;
+    msg->button_io[5] = swst;
+	*/
+	A27SetReadChecksum(msg);
 }
 
 void KeyIO_Init(void){
