@@ -9,7 +9,8 @@
 #define ADDR_MENU_DEVTEST       0x08076884
 #define ADDR_MENU_TRACKBALL     0x08069768
 #define ADDR_CALL_OPMENU        0x08056A78
-
+#define ADDR_SKIP_WARNING       0x080A7D04
+#define ADDR_SKIP_WARNING2      0x080A7DBD
 #define ADDR_ENABLE_AUTOPLAY    0x080A7DC7
 
 // Hardcoded Addresses for Hooks
@@ -30,5 +31,6 @@ void Patch_QCTest(void);
 void Patch_TrackballMenu(void);
 void Patch_DevTest(void);
 void Patch_Autoplay(void);
+void Patch_SkipWarning();
 
 #endif

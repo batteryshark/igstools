@@ -143,3 +143,11 @@ void Patch_Autoplay(void){
     UnprotectPage(ADDR_ENABLE_AUTOPLAY);
     *(char*)ADDR_ENABLE_AUTOPLAY = 1;
 }
+
+void Patch_SkipWarning(void){
+        printf("[Patches::Warning] Skip Warning.\n");
+        UnprotectPage(ADDR_SKIP_WARNING);
+        UnprotectPage(ADDR_SKIP_WARNING2);
+        *(unsigned int*)ADDR_SKIP_WARNING = 10;
+        *(unsigned int*)ADDR_SKIP_WARNING2 = 10;
+}
