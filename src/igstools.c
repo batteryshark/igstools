@@ -116,6 +116,7 @@ void __attribute__((constructor)) initialize(void){
     if(getenv("PM_DEVTEST")){Patch_DevTest();}
     if(getenv("PM_TRACKBALL")){Patch_TrackballMenu();}
     if(getenv("PM_AUTOPLAY")){Patch_Autoplay();}
+    if(getenv("PM_SKIPWARNING")){Patch_SkipWarning();}
     
     // Universal pccard fileio hooks
     PatchCall((void*)ADDR_PCCARD_OPEN,(void*)pccard_open);
