@@ -8,8 +8,11 @@
 
 
 #define IO_SET(value,bit) (value |= (1 << bit))
+
 #define IO_UNSET(value,bit) (value &= ~(1 << bit))
 #define IO_ISSET(value,bit) ((value >> bit) & 1)
+
+#define IO_ISSSET(value,old,bit) (IO_ISSET(value,bit) && !IO_ISSET(old,bit))
 
 #pragma pack(1)
 

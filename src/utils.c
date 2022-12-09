@@ -8,6 +8,7 @@
 void (*SystemEnd)(void) = (void*)ADDR_SYSTEM_END;
 
 void Shutdown(void){
+  
     int* PM_SystemStatus = (int*)ADDR_SYSTEM_STATUS;    
     *PM_SystemStatus = PM_SYSTEM_STATUS_SHUTDOWN;
     SystemEnd();
