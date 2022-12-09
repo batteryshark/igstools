@@ -38,7 +38,7 @@ static struct iostate {
     unsigned char sw_service;
     drum_state p1;
     drum_state p2;
-}keystate;
+}keystate,last_keystate;
 
 void evdev_input_loop(int kbd_evdev){
     struct input_event ev;
@@ -49,7 +49,7 @@ void evdev_input_loop(int kbd_evdev){
                 printf("[A27_KeyIO] User Exited.\n");
                 Shutdown();
             }
-
+            memcpy(&last_keystate,&keystate,sizeof(struct iostate));
             switch(ev.code){
                 // System Controls
                 case KEY_1:
@@ -125,13 +125,14 @@ void x11_input_loop(void){
     XGrabKeyboard(display, DefaultRootWindow(display),
                  True, GrabModeAsync, GrabModeAsync, CurrentTime);
     while (1){
+        memcpy(&last_keystate,&keystate,sizeof(struct iostate));
         XNextEvent(display, &event);
         if (event.type == KeyPress || event.type == KeyRelease){
             ksym = XLookupKeysym(&event.xkey, 0);         
             if(ksym == XK_Escape){
                 printf("[A27_KeyIO] User Exited.\n");               
                 Shutdown();
-            }
+            }                
             switch(ksym){            
                 // System Switches
                 case XK_1:
@@ -213,20 +214,20 @@ unsigned int KeyIO_GetSwitches(void){
     unsigned int n_state = 0;
     
     // Player 1
-    if(keystate.p1.drum_l){IO_SET(n_state,INP_P1_DRUM_L);}
-    if(keystate.p1.drum_r){IO_SET(n_state,INP_P1_DRUM_R);}
-    if(keystate.p1.rim_r) {IO_SET(n_state,INP_P1_RIM_R) ;}
-    if(keystate.p1.blue)  {IO_SET(n_state,INP_P1_BLUE)  ;}
-    if(keystate.p1.red)   {IO_SET(n_state,INP_P1_RED)   ;}
-    if(keystate.p1.rim_l) {IO_SET(n_state,INP_P1_RIM_L) ;}
+    if(keystate.p1.drum_l && !last_keystate.p1.drum_l){IO_SET(n_state,INP_P1_DRUM_L);}
+    if(keystate.p1.drum_r && !last_keystate.p1.drum_r){IO_SET(n_state,INP_P1_DRUM_R);}
+    if(keystate.p1.rim_r && !last_keystate.p1.rim_r) {IO_SET(n_state,INP_P1_RIM_R) ;}
+    if(keystate.p1.blue && !last_keystate.p1.blue)  {IO_SET(n_state,INP_P1_BLUE)  ;}
+    if(keystate.p1.red && !last_keystate.p1.red)   {IO_SET(n_state,INP_P1_RED)   ;}
+    if(keystate.p1.rim_l && !last_keystate.p1.rim_l) {IO_SET(n_state,INP_P1_RIM_L) ;}
 
     // Player 2
-    if(keystate.p2.blue)  {IO_SET(n_state,INP_P2_BLUE)  ;}
-    if(keystate.p2.red)   {IO_SET(n_state,INP_P2_RED)   ;}
-    if(keystate.p2.rim_l) {IO_SET(n_state,INP_P2_RIM_L) ;}
-    if(keystate.p2.drum_l){IO_SET(n_state,INP_P2_DRUM_L);}
-    if(keystate.p2.drum_r){IO_SET(n_state,INP_P2_DRUM_R);}
-    if(keystate.p2.rim_r) {IO_SET(n_state,INP_P2_RIM_R) ;}
+    if(keystate.p2.blue  && !last_keystate.p2.blue)  {IO_SET(n_state,INP_P2_BLUE)  ;}
+    if(keystate.p2.red && !last_keystate.p2.red)   {IO_SET(n_state,INP_P2_RED)   ;}
+    if(keystate.p2.rim_l && !last_keystate.p2.rim_l) {IO_SET(n_state,INP_P2_RIM_L) ;}
+    if(keystate.p2.drum_l && !last_keystate.p2.drum_l){IO_SET(n_state,INP_P2_DRUM_L);}
+    if(keystate.p2.drum_r && !last_keystate.p2.drum_r){IO_SET(n_state,INP_P2_DRUM_R);}
+    if(keystate.p2.rim_r && !last_keystate.p2.rim_r) {IO_SET(n_state,INP_P2_RIM_R) ;}
 
     // System Switches
     if(keystate.sw_service) {IO_SET(n_state,INP_SW_SERVICE);}
@@ -234,10 +235,10 @@ unsigned int KeyIO_GetSwitches(void){
     
     // Dev Switches
     if(keystate.hidden_sw[0]){IO_SET(n_state,INP_DEV_1);}
-    if(keystate.hidden_sw[1]){IO_SET(n_state,INP_DEV_2);}
-
+    if(keystate.hidden_sw[1]){IO_SET(n_state,INP_DEV_2);}    
     return n_state;
 }
+
 
 unsigned int KeyIO_GetCoinState(void){
     return keystate.coin;
