@@ -31,6 +31,6 @@ void Patch_QCTest(void);
 void Patch_TrackballMenu(void);
 void Patch_DevTest(void);
 void Patch_Autoplay(void);
-void Patch_SkipWarning();
-
+void Patch_SkipWarning(void);
+void Patch_AudioEngine(void);
 #endif

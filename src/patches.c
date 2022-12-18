@@ -1,8 +1,11 @@
 // Various Binary Patches for PercussionMaster
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "utils.h"
+#include "soundmgr.h"
 
 #include "patches.h"
 
@@ -150,4 +153,52 @@ void Patch_SkipWarning(void){
         UnprotectPage(ADDR_SKIP_WARNING2);
         *(unsigned int*)ADDR_SKIP_WARNING = 10;
         *(unsigned int*)ADDR_SKIP_WARNING2 = 10;
+}
+
+
+
+void Patch_AudioEngine(void){
+
+ printf("[Patches::AudioEngine] Using new FMOD Engine\n");
+ // Patch MixerInit to Always Return 1
+ UnprotectPage(0x08067E30);
+ *(unsigned int*)0x08067E30 = 0xC340C031;
+ 
+ // Patch MusicInit to just return.
+ UnprotectPage(0x08064D3C);
+ *(unsigned char*)0x08064D3C = 0xC3;
+ 
+ // Patch SoundInit to use our SoundMgrInit
+ PatchCall((void*)0x080560B9,SoundMgr_Init);
+ 
+ // Patch SoundLoad/SoundLoadDynamic to use our own SoundLoad
+ PatchJump((void*)0x08065430,SoundMgr_Load);
+ PatchJump((void*)0x08065488,SoundMgr_Load);
+ 
+ // Patch Load /  Credit Sound to use our own
+ PatchJump((void*)0x08065AC0,SoundMgr_LoadCredit);
+ PatchJump((void*)0x08065B88,SoundMgr_PlayCredit);
+ 
+ 
+ 
+ // Patch SoundPlay to use our own
+ PatchJump((void*)0x08065524,SoundMgr_Play);
+ 
+ // Patch SoundStop to use our own
+ PatchJump((void*)0x0806563C, SoundMgr_Stop);
+ 
+ // Patch SoundFree and SoundFreeAll to call our own
+ PatchJump((void*)0x080656A4,SoundMgr_Unload);
+ PatchJump((void*)0x08065750,SoundMgr_UnloadAll);
+ 
+ // SoundProcess we'll change to call our update tick
+ PatchJump((void*)0x080657D0,SoundMgr_Update);
+ 
+ // Patch SoundEnd to inline our own shutdown function.
+ PatchJump((void*)0x08065790,SoundMgr_Shutdown);
+ 
+ // Patch MusicEnd to just return
+ UnprotectPage(0x0806516C);
+ *(unsigned char*)0x0806516C = 0xC3;
+ 
 }

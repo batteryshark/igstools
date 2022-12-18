@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <sys/mman.h>
-
+#include <string.h>
 
 #define PM_SYSTEM_STATUS_SHUTDOWN 4
 #define ADDR_SYSTEM_STATUS 0x08429880
@@ -30,4 +30,13 @@ void PatchCall(void* call_address, void* target_address){
     int call_delta = (int)target_address - (int)(call_address+5);
     UnprotectPage((int)call_address);
     *(int*)(call_address+1) = call_delta;
+}
+
+void PatchJump(void* jump_address, void* target_address){
+    UnprotectPage((int)jump_address);
+    unsigned char jmp_stub[6] = {0x68,0x00,0x00,0x00,0x00,0xC3};
+    // Put target address in jmp_stub
+    memcpy(jmp_stub+1,&target_address,4);
+    // Put the stub onto our target
+    memcpy(jump_address,jmp_stub,sizeof(jmp_stub));
 }

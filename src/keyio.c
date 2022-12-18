@@ -18,29 +18,24 @@
 #include "a27/a27.h"
 #include "utils.h"
 
+#include "keyio.h"
+
 static const char* default_event_device = "/dev/input/by-path/platform-i8042-serio-0-event-kbd";
 static pthread_t hthread;
 
 
-typedef struct _drum_state{
-    unsigned char rim_l;
-    unsigned char drum_l;
-    unsigned char drum_r;
-    unsigned char rim_r;
-    unsigned char blue;
-    unsigned char red;
-}drum_state;
 
-static struct iostate {
-    unsigned char hidden_sw[2];
-    unsigned char coin;
-    unsigned char sw_test;
-    unsigned char sw_service;
-    drum_state p1;
-    drum_state p2;
-}keystate,last_keystate;
+
+static struct iostate keystate;
+static struct iostate last_keystate;
+
+
+struct iostate* KeyIO_GetState(void){
+ return &keystate;   
+}
 
 void evdev_input_loop(int kbd_evdev){
+    printf("[KeyIO] Using evdev Event Loop\n");
     struct input_event ev;
     while(1){
         read(kbd_evdev, &ev, sizeof(ev));        
@@ -113,6 +108,7 @@ void evdev_input_loop(int kbd_evdev){
 }
 
 void x11_input_loop(void){
+    printf("[KeyIO] Using X11 Event Loop\n");
     int ksym;
     Display *display;
     XEvent event;
@@ -228,6 +224,36 @@ unsigned int KeyIO_GetSwitches(void){
     if(keystate.p2.drum_l && !last_keystate.p2.drum_l){IO_SET(n_state,INP_P2_DRUM_L);}
     if(keystate.p2.drum_r && !last_keystate.p2.drum_r){IO_SET(n_state,INP_P2_DRUM_R);}
     if(keystate.p2.rim_r && !last_keystate.p2.rim_r) {IO_SET(n_state,INP_P2_RIM_R) ;}
+
+    // System Switches
+    if(keystate.sw_service) {IO_SET(n_state,INP_SW_SERVICE);}
+    if(keystate.sw_test)    {IO_SET(n_state,INP_SW_TEST)   ;}
+    
+    // Dev Switches
+    if(keystate.hidden_sw[0]){IO_SET(n_state,INP_DEV_1);}
+    if(keystate.hidden_sw[1]){IO_SET(n_state,INP_DEV_2);}    
+    return n_state;
+}
+
+// This version does not respect debounce.
+unsigned int KeyIO_GetSwitchesCurrent(void){
+    unsigned int n_state = 0;
+    
+    // Player 1
+    if(keystate.p1.drum_l ){IO_SET(n_state,INP_P1_DRUM_L);}
+    if(keystate.p1.drum_r ){IO_SET(n_state,INP_P1_DRUM_R);}
+    if(keystate.p1.rim_r ) {IO_SET(n_state,INP_P1_RIM_R) ;}
+    if(keystate.p1.blue )  {IO_SET(n_state,INP_P1_BLUE)  ;}
+    if(keystate.p1.red )   {IO_SET(n_state,INP_P1_RED)   ;}
+    if(keystate.p1.rim_l ) {IO_SET(n_state,INP_P1_RIM_L) ;}
+
+    // Player 2
+    if(keystate.p2.blue  )  {IO_SET(n_state,INP_P2_BLUE)  ;}
+    if(keystate.p2.red )   {IO_SET(n_state,INP_P2_RED)   ;}
+    if(keystate.p2.rim_l ) {IO_SET(n_state,INP_P2_RIM_L) ;}
+    if(keystate.p2.drum_l ){IO_SET(n_state,INP_P2_DRUM_L);}
+    if(keystate.p2.drum_r ){IO_SET(n_state,INP_P2_DRUM_R);}
+    if(keystate.p2.rim_r ) {IO_SET(n_state,INP_P2_RIM_R) ;}
 
     // System Switches
     if(keystate.sw_service) {IO_SET(n_state,INP_SW_SERVICE);}
