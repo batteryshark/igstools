@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
-
+#include <unistd.h>
 #include "a27.h"
 #include "../utils.h"
 #include "song.h"
@@ -34,9 +34,10 @@ static void *song_timer_thread(void* arg){
     long long elapsed_time = 0;
     while(in_song){        
         // Then, basically we check the current elapsed time divided by number of ms per beat and we should get what beat we're on.
+        //current_beat++;
         elapsed_time = GetCurrentTimestamp() - song_start;
         current_beat = (int)(elapsed_time / ms_per_beat);
-        current_beat++;
+        
     }
 }
 
@@ -170,7 +171,8 @@ typedef struct _SoundCue{
 }SoundCue,*PSoundCue;
 
 static SoundCue testsc[1] = {
-    {16,7}
+    //{16,7}
+    {10,1}
     
 };
 
