@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 
 #define PM_SYSTEM_STATUS_SHUTDOWN 4
 #define ADDR_SYSTEM_STATUS 0x08429880
@@ -40,3 +42,13 @@ void PatchJump(void* jump_address, void* target_address){
     // Put the stub onto our target
     memcpy(jump_address,jmp_stub,sizeof(jmp_stub));
 }
+
+
+long long GetCurrentTimestamp() {
+    long long milliseconds;
+    struct timeval te; 
+    gettimeofday(&te, NULL); // get current time
+    milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds    
+    return milliseconds;
+}
+
