@@ -50,10 +50,12 @@ typedef struct _SongSetting{
 }SongSetting,*PSongSetting;
 
 typedef struct _CURSOR_STATE{
-    unsigned int cursor_flags;
+    unsigned short cursor_flags;
+    unsigned char cursor_exflags;
+    unsigned char cursor_holdflags;
     short cursor_ypos;
     short cursor_stretch;
-}NOTECURSOR;
+}NoteCursor,*PNoteCursor;
 
 typedef struct _SONGSTATE{
     unsigned short cmd;
@@ -61,8 +63,8 @@ typedef struct _SONGSTATE{
     unsigned short p1_note_counter;
     unsigned short p2_note_counter;
     unsigned short sound_index[32];
-    NOTECURSOR p1_cursor[150];
-    NOTECURSOR p2_cursor[150];
+    NoteCursor p1_cursor[150];
+    NoteCursor p2_cursor[150];
     unsigned short p1_combo;
     unsigned short p2_combo;
     unsigned char p2_fireworks;

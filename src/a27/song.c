@@ -100,6 +100,7 @@ void Song_MainGameStart(const unsigned char* in_data, struct A27_Read_Message* m
     PrintSongSetting();
     // At this point, we can start our song timer.
     StartSong(song_setting.song_mode,song_setting.p1_songid, song_setting.p2_songid);
+ 
 }
 
 // -- Function 6: This is called every frame to update the song state
@@ -116,7 +117,11 @@ void Song_MainGameProcess(const unsigned char* in_data, struct A27_Read_Message*
     
     
     // Fire Sound Cues if necessary.
-    CheckForSoundCues(&song_state);
+    GetSoundIndex(song_state.sound_index);
+    GetCursorState(0,song_state.p1_cursor);
+    GetCursorState(1,song_state.p2_cursor);
+    
+    
     
     // TODO: Capture Current Input for Next Frame Judgement
     
@@ -125,6 +130,9 @@ void Song_MainGameProcess(const unsigned char* in_data, struct A27_Read_Message*
      A Note on scoring: From what I remember, a single "Great" is 5 points, then every additional great is 5*combo. so 10,15,20 etc
      I think as long as you don't break the combo, that follows - cool might be 3 * combo, nice = 1*combo... something similar to that
      */
+    // On beat zero, I have to start a new "measure" cursor.
+    // On beat 8, the measure cursor should be directly at 0x170
+    // 
     
     
     
@@ -136,7 +144,7 @@ void Song_MainGameProcess(const unsigned char* in_data, struct A27_Read_Message*
     memcpy(msg->data,&song_state,sizeof(song_state));
     
     // Reset Sound Index Back to Blank State for Next Frame
-    ResetSoundIndex(&song_state);
+    ClearSoundIndex();
     
     // TODO: Based on previous frame, cue up sound effects (keysounds) for next frame
     
