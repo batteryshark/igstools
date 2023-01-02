@@ -7,4 +7,5 @@ void Shutdown(void);
 void UnprotectPage(int addr);
 void PatchCall(void* call_address, void* target_address);
 void PatchJump(void* jump_address, void* target_address);
+long long GetCurrentTimestamp();
 #endif
