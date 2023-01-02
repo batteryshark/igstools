@@ -145,7 +145,7 @@ void GetSongResult(void* request, void* response){
         res.p1_miss = p1_judge.miss;
         res.p1_score = song_state.p1_score;
         res.p1_max_combo = p1_judge.max_combo;
-        if(res.p1_max_combo){
+        if(res.p1_max_combo < song_state.p1_combo){
             res.p1_max_combo = song_state.p1_combo;
         }
         res.p1_grade = CalculateGrade(&p1_judge);
@@ -369,6 +369,35 @@ void SongManager_Update(void* msg){
                             break;
                     }
                     // If we're not hitting the note, we don't have to judge anything...
+                    if(song_setting.p1_autoplay){
+                        was_note_hit = 1;
+                        switch(lane){
+                            case LANE_BLUE:
+                                IO_SET(swst,INP_P1_BLUE);
+                                break;
+                            case LANE_DRUM:
+                                IO_SET(swst,INP_P1_DRUM_L);
+                                break;
+                            case LANE_2DRUM:
+                                IO_SET(swst,INP_P1_DRUM_L);
+                                IO_SET(swst,INP_P1_DRUM_R);
+                                break;
+                            case LANE_RIM:
+                                IO_SET(swst,INP_P1_RIM_L);
+                                break;
+                            case LANE_2RIM:
+                                IO_SET(swst,INP_P1_RIM_L);
+                                IO_SET(swst,INP_P1_RIM_R);
+                                break;
+                            case LANE_RED:
+                                IO_SET(swst,INP_P1_RED);
+                                break;
+                            default:
+                                break;
+                            
+                        }
+                      rmsg->button_io[0] = swst;  
+                    }
                     if(!was_note_hit){continue;}
                     
                     song_state.p1_note_hit_animation[lane] = 1;
@@ -380,7 +409,7 @@ void SongManager_Update(void* msg){
                         song_state.p1_fever_beat++;
                         song_state.p1_cursor[i].cursor_holdflags <<= fever_combo_count;
                         song_state.p1_cursor[i].cursor_holdflags |= 2;
-                        song_state.p1_score += (5 * fever_combo_count);
+                        song_state.p1_score += (10 * song_state.p1_combo);
                         continue;
                     }
                     
@@ -389,7 +418,7 @@ void SongManager_Update(void* msg){
                     song_state.p1_combo++;
                     // Set the note to invisible now.
                     song_state.p1_cursor[i].cursor_flags &= ~2;                      
-                    if(ypos >= judge_great_min && ypos <= judge_great_max){
+                    if((ypos >= judge_great_min && ypos <= judge_great_max) || song_setting.p1_autoplay){
                         song_state.p1_score += (5*song_state.p1_combo);
                         p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_GREAT];
                         song_state.p1_judge_animation[lane] = ANI_JUDGE_GREAT;
@@ -420,6 +449,8 @@ void SongManager_Update(void* msg){
         }
         
         // Convert Float Lifebar to renderable one.
+        if(p1_judge.lifebar > LIFEBAR_MAX){p1_judge.lifebar = LIFEBAR_MAX;}
+        if(p1_judge.lifebar < LIFEBAR_MIN){p1_judge.lifebar = LIFEBAR_MIN;}
         song_state.p1_lifebar = (int)p1_judge.lifebar;
 
     }
