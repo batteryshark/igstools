@@ -118,6 +118,7 @@ void __attribute__((constructor)) initialize(void){
     if(getenv("PM_AUTOPLAY")){Patch_Autoplay();}
     if(getenv("PM_SKIPWARNING")){Patch_SkipWarning();}
     if(getenv("PM_NEWAUDIO")){Patch_AudioEngine();}
+    if(getenv("PM_RECDUMP")){Patch_RecordDump();}
     // Universal pccard fileio hooks
     PatchCall((void*)ADDR_PCCARD_OPEN,(void*)pccard_open);
     PatchCall((void*)ADDR_PCCARD_CLOSE,(void*)pccard_close);

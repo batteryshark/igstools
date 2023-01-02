@@ -33,4 +33,5 @@ void Patch_DevTest(void);
 void Patch_Autoplay(void);
 void Patch_SkipWarning(void);
 void Patch_AudioEngine(void);
+void Patch_RecordDump(void);
 #endif

@@ -155,6 +155,16 @@ void Patch_SkipWarning(void){
         *(unsigned int*)ADDR_SKIP_WARNING2 = 10;
 }
 
+void Patch_RecordDump(void){
+    printf("[Patches::RecDump]\n");
+    UnprotectPage(0x0807D3D9);
+    memset((void*)0x0807D3D9,0x90,6);
+    
+        UnprotectPage(0x0807C79A);
+    memset((void*)0x0807C79A,0x90,6);
+        UnprotectPage(0x080788C9);
+    memset((void*)0x080788C9,0x90,6);    
+}
 
 
 void Patch_AudioEngine(void){
