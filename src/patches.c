@@ -158,7 +158,7 @@ void Patch_SkipWarning(void){
 
 
 void Patch_AudioEngine(void){
-
+/*
  printf("[Patches::AudioEngine] Using new FMOD Engine\n");
  // Patch MixerInit to Always Return 1
  UnprotectPage(0x08067E30);
@@ -200,5 +200,5 @@ void Patch_AudioEngine(void){
  // Patch MusicEnd to just return
  UnprotectPage(0x0806516C);
  *(unsigned char*)0x0806516C = 0xC3;
- 
+ */
 }
