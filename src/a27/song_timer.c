@@ -105,32 +105,63 @@ void AddToCursors(PSongState song_state,PCursorEvent ce){
     ce->event_beat = -1;
 }
 
+// We'll add a measure bar either to a free slot, or a slot we've already occupied as a measure bar.
 void AddMeasureBar(PSongState song_state){
     PNoteCursor target;
     if(song_state->p1_playing){
+        target = NULL;
         for(int i=0;i<150;i++){
             target = &song_state->p1_cursor[i];
-            if(!target->cursor_flags || (target->cursor_exflags && (target->cursor_flags & 2) == 0)){
-                target->cursor_flags |= 0x02;
-                target->cursor_exflags = 0x40;
-                target->cursor_ypos = 0;
-                p1_cursor_ts[i] = GetCurrentTimestamp();
-                break;
+            if(target->cursor_exflags){
+                    target->cursor_flags |= 0x02;
+                    target->cursor_exflags = 0x40;
+                    target->cursor_ypos = 0;
+                    p1_cursor_ts[i] = GetCurrentTimestamp();
+                    break;
+            }else{
+                target = NULL;
             }
-        }        
+        }
+        if(target == NULL){
+            for(int i=0;i<150;i++){
+                target = &song_state->p1_cursor[i];
+                if(!target->cursor_flags){
+                        target->cursor_flags |= 0x02;
+                        target->cursor_exflags = 0x40;
+                        target->cursor_ypos = 0;
+                        p1_cursor_ts[i] = GetCurrentTimestamp();
+                        break;
+                }
+            }
+        }
     }
+        
     if(song_state->p2_playing){
+        target = NULL;
         for(int i=0;i<150;i++){
             target = &song_state->p2_cursor[i];
-            if(!target->cursor_flags || (target->cursor_exflags && (target->cursor_flags & 2) == 0)){
-                target->cursor_flags |= 0x02;
-                target->cursor_exflags = 0x40;
-                target->cursor_ypos = 0;
-                p2_cursor_ts[i] = GetCurrentTimestamp();
-                break;
+            if(target->cursor_exflags){
+                    target->cursor_flags |= 0x02;
+                    target->cursor_exflags = 0x40;
+                    target->cursor_ypos = 0;
+                    p2_cursor_ts[i] = GetCurrentTimestamp();
+                    break;
+            }else{
+                target = NULL;
             }
-            
-        }        
+        }
+        if(target == NULL){
+            for(int i=0;i<150;i++){
+                target = &song_state->p2_cursor[i];
+                if(!target->cursor_flags){
+                        target->cursor_flags |= 0x02;
+                        target->cursor_exflags = 0x40;
+                        target->cursor_ypos = 0;
+                        p2_cursor_ts[i] = GetCurrentTimestamp();
+                        break;
+                }
+            }
+        }
     }    
 }
 
@@ -138,10 +169,10 @@ static void *cursorevent_thread(void* arg){
     PSongParams parms = (PSongParams)arg;    
     unsigned short last_beat = current_beat;
     short spawn_beat;
-    //AddMeasureBar(parms->song_state);
     while(in_song){             
         if(current_beat != last_beat){
-            if(current_beat % 32 == 0){
+            // If 16 beats ahead is a measure, render a measure bar.
+            if(((current_beat + 16) % 32) == 0){
                 AddMeasureBar(parms->song_state);    
             }
             
@@ -149,7 +180,7 @@ static void *cursorevent_thread(void* arg){
                 PCursorEvent ce = parms->song_info->cursor_events + i;
                 // We have to calculate a beat to spawn at... I'll try a static value first.
                 if(ce->event_beat == -1){continue;}
-                spawn_beat = ce->event_beat - 32;
+                spawn_beat = ce->event_beat - 16;
                 
                 if(spawn_beat <= current_beat){    
                     AddToCursors(parms->song_state,ce);
@@ -169,9 +200,9 @@ void ClearCursor(PNoteCursor ccur){
     ccur->cursor_ypos = 0;    
 }
 
-unsigned short derive_cursor_timescale(long long cts, long long spawn_time){
+unsigned short derive_cursor_timescale(long long cts, long long spawn_time, unsigned int speed_mod){
     long long elapsed_time = cts-spawn_time;
-    float progress_ratio = (float)elapsed_time / (float)ms_per_measure;
+    float progress_ratio = (float)elapsed_time / ((float)ms_per_measure / (float)speed_mod);
     float distance_value = (float)JUDGE_CENTER * progress_ratio;
     return (unsigned short)distance_value;
 }
@@ -187,7 +218,7 @@ static void *scrolling_timer_thread(void* arg){
                     ccur = &parms->song_state->p1_cursor[i];
                     // We only scroll visible stuff
                     if((ccur->cursor_flags & 2) > 0){
-                        ccur->cursor_ypos = derive_cursor_timescale(cts,p1_cursor_ts[i]);
+                        ccur->cursor_ypos = derive_cursor_timescale(cts,p1_cursor_ts[i],parms->song_setting->p1_speed + 1);
                         
                         // If it's a measure bar, we'll check if it's hit our beat zone and make it invisible.
                         if(ccur->cursor_exflags){
@@ -220,7 +251,7 @@ void StopTimer(void){
 
 void StartTimer(void* parms){
     if(in_song){StopTimer();}
-    current_beat = -1;
+    current_beat = 0;
     in_song = 1;
     pthread_create(&songtimer_hthread, 0, song_timer_thread, parms);
     pthread_create(&soundevent_hthread,0,soundevent_thread,parms);
