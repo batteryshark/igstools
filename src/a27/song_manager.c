@@ -108,7 +108,7 @@ unsigned char CalculateGrade(PPlayerJudge judge){
     // First, calculate the max value.
     unsigned int max_nval = song_info.header.total_notes * 4; // where 4 is all "GREAT"
     unsigned int jval = (judge->great * 4) + (judge->cool * 3) + (judge->nice * 2) + (judge->poor * 1);
-    float grade = (float)jval / (float)max_nval;
+    float grade = ((float)jval / (float)max_nval) * 100.f;
     if(grade > 99.9f){return ResultGradeS;}
     if(grade > 96.9f){return ResultGradeAPlus;}
     if(grade > 93.0f){return ResultGradeA;}
@@ -415,31 +415,37 @@ void SongManager_Update(void* msg){
                     
                     // If we don't have a fever flag and it's a regular note
                     short ypos = song_state.p1_cursor[i].cursor_ypos;
-                    song_state.p1_combo++;
+                    // Hacky multiplier for double notes (2RIM 2DRUM count as 2 hits)
+                    short hit_mult = 1;
+                    if(lane == LANE_2DRUM || lane == LANE_2RIM){
+                        hit_mult = 2; 
+                    }                    
+                    song_state.p1_combo+= hit_mult;
+
                     // Set the note to invisible now.
                     song_state.p1_cursor[i].cursor_flags &= ~2;                      
                     if((ypos >= judge_great_min && ypos <= judge_great_max) || song_setting.p1_autoplay){
-                        song_state.p1_score += (5*song_state.p1_combo);
-                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_GREAT];
+                        song_state.p1_score += (5*song_state.p1_combo)  * hit_mult;
+                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_GREAT]  * hit_mult;
                         song_state.p1_judge_animation[lane] = ANI_JUDGE_GREAT;
-                        p1_judge.great++;
+                        p1_judge.great+=hit_mult;
                     }else if(ypos >= judge_cool_min && ypos <= judge_cool_max){
-                        song_state.p1_score += (4*song_state.p1_combo);
-                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_COOL];
+                        song_state.p1_score += (4*song_state.p1_combo)  * hit_mult;
+                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_COOL] * hit_mult;
                         song_state.p1_judge_animation[lane] = ANI_JUDGE_COOL;
-                        p1_judge.cool++;
+                        p1_judge.cool+=hit_mult;
                         
                     }else if(ypos >= judge_nice_min && ypos <= judge_nice_max){
-                        song_state.p1_score += (2*song_state.p1_combo);
-                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_NICE];
+                        song_state.p1_score += (2*song_state.p1_combo)  * hit_mult;
+                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_NICE]  * hit_mult;
                         song_state.p1_judge_animation[lane] = ANI_JUDGE_NICE;
-                        p1_judge.nice++;
+                        p1_judge.nice+=hit_mult;
                         
                     }else{
-                        song_state.p1_score += (1*song_state.p1_combo);
-                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_POOR];
+                        song_state.p1_score += (1*song_state.p1_combo)  * hit_mult;
+                        p1_judge.lifebar+= song_setting.level_rate_p1[JUDGE_POOR]  * hit_mult;
                         song_state.p1_judge_animation[lane] = ANI_JUDGE_POOR;
-                        p1_judge.poor++;
+                        p1_judge.poor+=hit_mult;
                         
                     }
                 

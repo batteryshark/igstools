@@ -2,8 +2,9 @@
 #define __SONG_DEFS_H
 
 
-#define JUDGE_CENTER 0x179
 
+#define JUDGE_CENTER 0x179
+#define CURSOR_MAX_Y 0x1A0
 enum KeySoundIndex{
         KEYSOUND_OFF,
         KEYSOUND_BLUE,

@@ -202,7 +202,26 @@ void ClearCursor(PNoteCursor ccur){
 
 unsigned short derive_cursor_timescale(long long cts, long long spawn_time, unsigned int speed_mod){
     long long elapsed_time = cts-spawn_time;
-    float progress_ratio = (float)elapsed_time / ((float)ms_per_measure / (float)speed_mod);
+    float speed_mult = 1.0f;
+    switch(speed_mod){
+        case 1:
+            speed_mult = 1.0f;
+            break;
+        case 2: // 1x
+            speed_mult = 1.50f;
+            break;
+        case 3: // 2x
+            speed_mult = 2.0f;
+            break;
+        case 4: // 3x
+            speed_mult = 2.5f;
+            break;
+        case 5: // 4x
+            speed_mult = 3.0f;
+        default:
+            break;
+    }
+    float progress_ratio = (float)elapsed_time / ((float)ms_per_measure / (float)speed_mult);
     float distance_value = (float)JUDGE_CENTER * progress_ratio;
     return (unsigned short)distance_value;
 }

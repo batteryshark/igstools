@@ -157,13 +157,16 @@ void Patch_SkipWarning(void){
 
 void Patch_RecordDump(void){
     printf("[Patches::RecDump]\n");
-    UnprotectPage(0x0807D3D9);
-    memset((void*)0x0807D3D9,0x90,6);
+    UnprotectPage(0x080779BD);
+    memset((void*)0x080779BD,0x90,2);
+ 
+        UnprotectPage(0x080779EF);
+    memset((void*)0x080779EF,0x90,2);
     
-        UnprotectPage(0x0807C79A);
-    memset((void*)0x0807C79A,0x90,6);
-        UnprotectPage(0x080788C9);
-    memset((void*)0x080788C9,0x90,6);    
+     
+        UnprotectPage(0x0807DBFC);
+    memset((void*)0x0807DBFC,0x90,2);
+    
 }
 
 
