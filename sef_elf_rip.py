@@ -52,7 +52,7 @@ unsigned int num_wave_files;
 def addr2raw(addr):
 	return addr - ELF_BASE
 	
-def parse_songinfo(data,num_waves):
+def parse_songinfo(data):
     
     total_notes = struct.unpack("<H",data[12:14])[0]
     min_notes = struct.unpack("<H",data[14:16])[0]
@@ -63,48 +63,108 @@ def parse_songinfo(data,num_waves):
         'num_beats':struct.unpack("<H",data[2:4])[0],
         'pass_percentage':pass_percentage,
         'track_offsets':[],
-        'soundevents':[{'beat':32,'value':num_waves}]
+        'sound_offsets':[],
+        'soundevents':[]
     }
     # We have to find enabled tracks and add them now.
     for i in range(0,36):
         if(data[244 + i] == 1):
-            # We're only capturing the first 7 tracks because they are the only ones used.
-            if(i >= 6):
+            # We're only capturing the first 6 tracks because they are the only ones used for notes
+            if(i < 7):
+                track_addr = struct.unpack("<I",data[100 + (4*i):(100 + (4*i)) + 4])[0]            
+                info['track_offsets'].append(addr2raw(track_addr))
                 continue
-            track_addr = struct.unpack("<I",data[100 + (4*i):(100 + (4*i)) + 4])[0]
+            # These two tracks are for sound events
+            if(i == 16 or i == 17):
+                track_addr = struct.unpack("<I",data[100 + (4*i):(100 + (4*i)) + 4])[0]
+                info['sound_offsets'].append(addr2raw(track_addr))
+                continue
+                
             
-            info['track_offsets'].append(addr2raw(track_addr))
             
     return info
 
-def parse_noteinfo(val):
+def parse_noteinfo(val,track_num):
+    
     note_info = {
-        'lane': (val >> 0x0F) & 0xFF,
+        'lane': track_num,
         'beat': val & 0x3FFF,
-        'exflag': (val >> 0x10) & 0xFFFF,
+        'holdflag':0,
+        'exflag': 0,
+        'swoff':0,
         'raw':val
     }
     return note_info
+#   *(_DWORD *)&wTotalNote[2 * v7 + 2] = ((someval_from_buffer & 0x3FF) << 14) | bgnowevent_buffer & 0x3FFF | *(_DWORD *)&wTotalNote[2 * v7 + 2] & 0xFF000000;
+def parse_soundevent(val):
+    soundevent = {
+        'beat': val & 0x3FFF,
+        'value': (val >> 0x0E) + 1
+    }
+    
+    return soundevent
+
+# The notes with the flags don't count as one note... there are two to a pair, those values count as one 
+# right shift 2 to get the fever count then take the first time minus the second to get the stretch value.
 
 def parse_trackinfo(f,info):
     notes = []
-    for entry in info['track_offsets']:
+    note_count = 0
+    for track_num in range(0,len(info['track_offsets'])):        
+        # Set our Offset 
+        f.seek(info['track_offsets'][track_num])
+
+        
+        
+        while 1:
+            val = struct.unpack("<I",f.read(4))[0]    
+            if val == 0x3FFF:
+                break      
+            # Determine if this is a hold note
+            if(val & 0xFF000000 > 0 and ((val >> 0x18) & 1) > 0):               
+                fever_count = (val & 0xFF000000) >> 0x1A
+                note_count += fever_count
+                next_val = struct.unpack("<I",f.read(4))[0]   
+                val_diff = ((next_val & 0x3FFF) - (val & 0x3FFF)) * -14 # why -14? why not!
+                
+                note_info = {
+                    'lane':track_num,
+                    'beat':val & 0x3FFF,
+                    'holdflag':(fever_count << 2) | 0x02,
+                    'exflag': 0,
+                    'swoff': val_diff
+                }                              
+                notes.append(note_info)
+                continue
+            
+            # If not a hold note, we'll do other stuff
+            if track_num in [2,4]:
+                note_count+=2
+            else:
+                note_count+=1
+            notes.append(parse_noteinfo(val,track_num))
+        
+    info['notes'] = notes
+    del info['track_offsets']
+    # Calculate total notes and min notes to pass based on passing percentage
+    info['total_notes'] = note_count
+    info['min_notes'] = int(info['total_notes'] * info['pass_percentage'])
+    
+    # Parse the sound event tracks.
+    for entry in info['sound_offsets']:
         f.seek(entry,0)
         val = struct.unpack("<I",f.read(4))[0]
         # We break out of reading from this track if we hit the end marker.
         if(val == 0x3FFF):
             continue
-        notes.append(parse_noteinfo(val))
+        info['soundevents'].append(parse_soundevent(val))
         while val != 0x3FFF:
             val = struct.unpack("<I",f.read(4))[0]            
             if(val == 0x3FFF):
                 break            
-            notes.append(parse_noteinfo(val))
-    info['notes'] = notes
-    del info['track_offsets']
-    # Calculate total notes and min notes to pass based on passing percentage
-    info['total_notes'] = len(notes)
-    info['min_notes'] = int(info['total_notes'] * info['pass_percentage'])
+            info['soundevents'].append(parse_soundevent(val))
+        
+    del info['sound_offsets']
     
     return info
 
@@ -128,7 +188,7 @@ def generate_sef_data(info):
         cnote = info['notes'][i]
         sef_data += struct.pack("<h",cnote['beat'])
         # 2 bytes for the flags
-        flag = (cnote['lane'] << 6) & 0xFF 
+        flag = (cnote['lane'] << 6) & 0xFFFF     
         flag |= 2
         sef_data += struct.pack("<H",flag)
         
@@ -140,10 +200,9 @@ def generate_sef_data(info):
         swoff = 0
         # Note - this is bullshit for now because I don't understand this part.
         # Note 2: We're disabling the fever hold steps for now because they're fucked up.
-        if(cnote['exflag'] != 0):
-            #hold_flag = 0x26
-            #swoff = -280
-            pass
+        if(cnote['holdflag'] != 0):
+            hold_flag = cnote['holdflag']
+            swoff = cnote['swoff'] 
         
         sef_data += struct.pack("B",hold_flag)
         # 2 bytes for the swoff 
@@ -180,7 +239,7 @@ for i in range(0,max_band):
 for i in range(0,max_band):
     f.seek(band_entries[i]['chart_address'])
     chart_data = f.read(SONGINFO_SIZE)
-    song_charts.append(parse_songinfo(chart_data,band_entries[i]['num_waves']))
+    song_charts.append(parse_songinfo(chart_data))
     
 # For each song, for each track offset, we have to parse 4 bytes at a time until we hit 0x3FFF which signals the end of the notes for that track, we'll need to pull these values apart and dump them into something useful.
 for i in range(0,max_band):
@@ -196,9 +255,11 @@ for i in range(0,max_band):
 """
 
 # Let's look at cha cha queen (3) to tune this thing.
-#ccq = song_charts[3]
-#print(ccq)
-#exit(1)
+"""
+ccq = song_charts[3]
+print(ccq)
+exit(1)
+"""
 
 for i in range(0,max_band):
     sef_data = generate_sef_data(song_charts[i])
