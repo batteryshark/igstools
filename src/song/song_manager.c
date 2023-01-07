@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../keyio.h"
 
 #include "song_defs.h"
 
@@ -24,6 +25,38 @@ RecFile rec_file;
 SongEvent event;
 
 
+void ResetSoundEvents(void){
+    for(int i=0;i<32;i++){
+            state.sound_index[i] = 0;
+    }
+}
+
+void AddToSoundEvents(unsigned short event_value){
+    for(int i=16;i<32;i++){
+        if(!state.sound_index[i]){
+            state.sound_index[i] = event_value;   
+        }
+    }    
+}
+
+unsigned short GetKeySoundMapping(unsigned char track_index){
+    switch(track_index){
+        case LANE_BLUE:
+            return KEYSOUND_BLUE;
+        case LANE_DRUM:
+            return KEYSOUND_DRUM;
+        case LANE_2DRUM:
+            return KEYSOUND_2DRUM;
+        case LANE_RIM:
+            return KEYSOUND_RIM;
+        case LANE_2RIM:
+            return KEYSOUND_2RIM;
+        case LANE_RED:
+            return KEYSOUND_RED;
+        default:
+            return KEYSOUND_OFF;
+    }
+}
 
 unsigned int SongManager_Init(void* setting_data, void* response_buffer){
     printf("SongManager_Init\n");
@@ -81,28 +114,42 @@ unsigned int SongManager_Start(void* response_buffer){
     return sizeof(SongState);    
 }
 
-
 unsigned int SongManager_Update(void* response_buffer){
-    PlayerHitState player_hit[2];
     state.cmd = A27_SONGMODE_MAINGAME_PROCESS;
-    // Get Current IO State 
- // TODO: In the outer function we also need to erase the note if ANI_JUDGE was anything but none   
-    // Set the player animations
-    // Call the keysounds you need 
-    // Do Cursor Judgement
-    // Update Player State
-    // TODO RESET ALL ANIMATIONS 
+    
+    // Get the current beat from the timer.
+    short current_beat = GetCurrentBeat();
+        
+    // Get the current hit state of our tracks.
+    PIOTrackStates track_state = GetIOTrackStates();
+    
     
     for(int i=0;i<2;i++){        
-        state.current_beat[i] = GetCurrentBeat();        
+        state.current_beat[i] = current_beat;     
         // Skip if we aren't using this player.
         if(!state.player_isplaying[i]){continue;}
-        // TODO: Revamp IOState Check to update current track hit state in ioloop rather than wasting cycles here, use PlayerHitState but get something for lanes too.
+        
         memset(&state.player_cursor_hit_animation[i],0x00,sizeof(PlayerAnimation));
         memset(&state.player_judge_graphic[i],0x00,sizeof(PlayerAnimation));
         memset(&state.player_track_hit_animation[i],0x00,sizeof(PlayerAnimation));
         
-        // TODO: Set Track Hit Animations Based on Player Hit + Add Keysound based on player hit.
+        for(int j=0;j<6;j++){
+            state.player_track_hit_animation[i].track[j] = track_state->player[i].track[j];
+            if(track_state->player[i].track[j]){
+                state.sound_index[(i*8) + j] = GetKeySoundMapping(j);
+            }else{
+                state.sound_index[(i*8) + j] = KEYSOUND_OFF;
+            }
+        }
+        state.player_track_hit_animation[i].track[LANE_BLUE] = track_state->player[i].track[LANE_BLUE];
+        state.player_track_hit_animation[i].track[LANE_DRUM] = track_state->player[i].track[LANE_DRUM];
+        state.player_track_hit_animation[i].track[LANE_2DRUM] = track_state->player[i].track[LANE_2DRUM];
+        state.player_track_hit_animation[i].track[LANE_RIM] = track_state->player[i].track[LANE_RIM];
+        state.player_track_hit_animation[i].track[LANE_2RIM] = track_state->player[i].track[LANE_2RIM];
+        state.player_track_hit_animation[i].track[LANE_RED] = track_state->player[i].track[LANE_RED];
+        
+        // Call the keysounds you need 
+        
         
         for(int j=0;j<PLAYER_CURSOR_MAX_ACTIVE;j++){
             // We don't care about cursors that aren't active and measure bars.
@@ -110,7 +157,7 @@ unsigned int SongManager_Update(void* response_buffer){
                 unsigned char cursor_track = GetCursorTrack(state.player_cursor[i].cursor[j]);
                 
                 if(IsFeverCursor(state.player_cursor[i].cursor[j])){                    
-                    state.player_judge_graphic[i].track[cursor_track] = FeverJudge(&judge,state.player_cursor[i].cursor[j].y_pos, state.player_cursor[i].cursor[j].fever_offset,GetFeverCombo(state.player_cursor[i].cursor[j]), player_hit[i].track[cursor_track], i, settings.player_autoplay[i], event.total_notes);
+                    state.player_judge_graphic[i].track[cursor_track] = FeverJudge(&judge,state.player_cursor[i].cursor[j].y_pos, state.player_cursor[i].cursor[j].fever_offset,GetFeverCombo(state.player_cursor[i].cursor[j]), track_state->player[i].track[cursor_track], i, settings.player_autoplay[i], event.total_notes);
                     
                     if(state.player_judge_graphic[i].track[cursor_track]){
                         // If this fever is done, we'll remove the fake result we gave and hide the cursor.
@@ -121,14 +168,18 @@ unsigned int SongManager_Update(void* response_buffer){
                         }else if(state.player_judge_graphic[i].track[cursor_track] == ANI_JUDGE_FEVER_HIT){
                             state.player_judge_graphic[i].track[cursor_track] = 0;
                             state.player_cursor_hit_animation[i].track[cursor_track] = 1;
+                            // We're adding a duplicate set of 'track hit' animation cues on the hits because of autoplay.
+                            state.player_track_hit_animation[i].track[cursor_track] = 1;
                        }else if(state.player_judge_graphic[i].track[cursor_track] == ANI_JUDGE_BRAVO){                        
-                           state.player_cursor_hit_animation[i].track[cursor_track] = 1;                        
+                           state.player_cursor_hit_animation[i].track[cursor_track] = 1;  
+                           state.player_track_hit_animation[i].track[cursor_track] = 1;
                        }
                     }                    
                 }else{
-                    state.player_judge_graphic[i].track[cursor_track] = CursorJudge(&judge,state.player_cursor[i].cursor[j].y_pos,cursor_track, player_hit[i].track[cursor_track], i, settings.player_autoplay[i], event.total_notes);
+                    state.player_judge_graphic[i].track[cursor_track] = CursorJudge(&judge,state.player_cursor[i].cursor[j].y_pos,cursor_track, track_state->player[i].track[cursor_track], i, settings.player_autoplay[i], event.total_notes);
                     if(state.player_judge_graphic[i].track[cursor_track]){
                         state.player_cursor_hit_animation[i].track[cursor_track] = 1;
+                        state.player_track_hit_animation[i].track[cursor_track] = 1;
                         HideCursor(state.player_cursor[i].cursor[j]);
                     }
                 }                
@@ -144,11 +195,15 @@ unsigned int SongManager_Update(void* response_buffer){
         state.player_score_copy[i] = judge.player[i].score;
     }
     
-    // TODO: Get SoundIndex State
-    
-    // Done
-    memcpy(response_buffer,&state,sizeof(SongState));
-    // Do Stuff for Next Time (e.g. reset soundindex etc)
+    // Add any SoundIndex Audio Cues 
+    for(int i = 0; i < event.num_sound_events; i++){
+        if(event.sound_event[i].spawn_beat > 0 && current_beat >= event.sound_event[i].spawn_beat){
+            AddToSoundEvents(event.sound_event[i].event_value);
+            event.sound_event[i].spawn_beat = -1;
+        }
+    }
+    memcpy(response_buffer,&state,sizeof(SongState));    
+    ResetSoundEvents();
     return sizeof(SongState);    
 }
 

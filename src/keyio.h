@@ -19,6 +19,14 @@ struct iostate {
     drum_state p2;
 };
 
+typedef struct _IO_TRACK_STATE{
+    unsigned char track[8];
+}IOTrackState,*PIOTrackState;
+
+typedef struct _IO_TRACK_STATES{
+    IOTrackState player[2];
+}IOTrackStates,*PIOTrackStates;
+
 struct iostate* KeyIO_GetState(void);
 unsigned int KeyIO_GetSwitches(void);
 unsigned int KeyIO_GetSwitchesCurrent(void);
@@ -26,4 +34,5 @@ unsigned int KeyIO_GetCoinState(void);
 void KeyIO_InjectWrite(unsigned char* buf);
 void KeyIO_InjectRead(unsigned char* buf);
 void KeyIO_Init(void);
+PIOTrackStates GetIOTrackStates(void);
 #endif

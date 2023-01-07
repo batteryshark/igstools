@@ -3,6 +3,27 @@
 
 #include "song_cursor.h"
 
+enum CURSOR_LANE{
+    LANE_BLUE,
+    LANE_DRUM,
+    LANE_2DRUM,
+    LANE_RIM,
+    LANE_2RIM,
+    LANE_RED,
+    LANE_PLACEHOLDER_1,
+    LANE_PLACEHOLDER_2
+};
+
+enum KeySoundIndex{
+    KEYSOUND_OFF,
+    KEYSOUND_BLUE,
+    KEYSOUND_RED,
+    KEYSOUND_DRUM,
+    KEYSOUND_RIM,
+    KEYSOUND_2DRUM,
+    KEYSOUND_2RIM
+};
+
 typedef struct _PLAYER_ANIMATION{
     unsigned char track[8];
 }PlayerAnimation,*PPLayerAnimation;
