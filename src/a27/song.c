@@ -9,6 +9,11 @@
 void Song_UploadPlaybackHeader(const unsigned char* in_data, struct A27_Read_Message* msg){
     // TODO: Upload Logic
     // This Effectively means OK?
+    printf("Upload Playback Header:\n");
+    for(int i=0;i<148;i++){
+        printf("%02x",in_data[i]);
+    }
+    printf("\n");
     msg->dwBufferSize = 4;
     msg->data[0] = 2;
 }
@@ -18,6 +23,11 @@ void Song_UploadPlaybackBody(const unsigned char* in_data, struct A27_Read_Messa
     // Do Nothing for Now
     // TODO: Upload Logic
     // This Effectively means OK?
+        printf("Upload Playback Data:\n");
+    for(int i=0;i<4004;i++){
+        printf("%02x",in_data[i]);
+    }
+    printf("\n");
     msg->dwBufferSize = 4;
     msg->data[0] = 2;
 }

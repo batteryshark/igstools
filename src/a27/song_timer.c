@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <time.h>
 
+#include "../recfile.h"
 #include "../utils.h"
 #include "song_defs.h"
 #include "song_utils.h"
@@ -71,6 +72,11 @@ static void *soundevent_thread(void* arg){
     }
 }
 
+
+#define ShowCursor(x) x->flags |=2
+#define HideCursor(x) x->flags &=~2
+
+
 void AddToCursors(PSongState song_state,PCursorEvent ce){
     PNoteCursor target;
     if(song_state->p1_playing){
@@ -79,9 +85,9 @@ void AddToCursors(PSongState song_state,PCursorEvent ce){
             if(!target->cursor_flags){
                 target->cursor_flags = ce->flags;
                 target->cursor_ypos = 0;
-                target->cursor_exflags = ce->ex_flag;
-                target->cursor_stretch = ce->cursor_swoff;
-                target->cursor_holdflags = ce->hold_flag;
+                target->cursor_exflags =0;
+                target->cursor_stretch = ce->fever_offset;
+                target->cursor_holdflags = ce->fever_flag;
                 p1_cursor_ts[i] = GetCurrentTimestamp();
                 break;
             }
@@ -93,9 +99,9 @@ void AddToCursors(PSongState song_state,PCursorEvent ce){
             if(!target->cursor_flags){
                 target->cursor_flags = ce->flags;
                 target->cursor_ypos = 0;
-                target->cursor_exflags = ce->ex_flag;
-                target->cursor_stretch = ce->cursor_swoff;
-                target->cursor_holdflags = ce->hold_flag;
+                target->cursor_exflags = 0;
+                target->cursor_stretch = ce->fever_offset;
+                target->cursor_holdflags = ce->fever_flag;
                 p2_cursor_ts[i] = GetCurrentTimestamp();
                 break;
             }
@@ -172,7 +178,7 @@ static void *cursorevent_thread(void* arg){
     while(in_song){             
         if(current_beat != last_beat){
             // If 16 beats ahead is a measure, render a measure bar.
-            if(((current_beat + 16) % 32) == 0){
+            if(((current_beat + 14) % 32) == 0){
                 AddMeasureBar(parms->song_state);    
             }
             
@@ -180,7 +186,7 @@ static void *cursorevent_thread(void* arg){
                 PCursorEvent ce = parms->song_info->cursor_events + i;
                 // We have to calculate a beat to spawn at... I'll try a static value first.
                 if(ce->event_beat == -1){continue;}
-                spawn_beat = ce->event_beat - 16;
+                spawn_beat = ce->event_beat - 14;
                 
                 if(spawn_beat <= current_beat){    
                     AddToCursors(parms->song_state,ce);

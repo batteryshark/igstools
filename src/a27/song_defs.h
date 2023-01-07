@@ -3,6 +3,7 @@
 
 
 
+
 #define JUDGE_CENTER 0x179
 #define CURSOR_MAX_Y 0x1A0
 enum KeySoundIndex{
@@ -26,7 +27,8 @@ enum JUDGE_RATE{
     JUDGE_MISS
 };
 enum ANI_JUDGE{
-    ANI_JUDGE_GREAT=1,
+    ANI_JUDGE_NONE,
+    ANI_JUDGE_GREAT,
     ANI_JUDGE_COOL,
     ANI_JUDGE_NICE,
     ANI_JUDGE_POOR,
@@ -62,19 +64,6 @@ enum LifebarSetting{
     LIFEBAR_MAX=28
 };
 
-// Song Info from our SEF File -- Unofficial
-typedef struct _SoundEvent{
-    short event_beat;
-    unsigned short event_value;
-}SoundEvent,*PSoundEvent;
-
-typedef struct _CursorEvent{
-    short event_beat;
-    unsigned short flags;
-    unsigned char ex_flag;
-    unsigned char hold_flag;
-    short cursor_swoff;
-}CursorEvent,*PCursorEvent;
 
 
 
@@ -89,8 +78,8 @@ typedef struct _SongInfoHeader{
 
 typedef struct _SongInfo{
     SongInfoHeader header;
-    PSoundEvent sound_events;
-    PCursorEvent cursor_events;
+    void* sound_events;
+    void* cursor_events;
 }SongInfo,*PSongInfo;
 
 // -- End Unofficial Stuff
@@ -175,6 +164,7 @@ typedef struct _SONGSTATE{
 
 typedef struct _PLAYER_JUDGECOUNT{
     float lifebar;
+    unsigned char hit_zero_life;
     unsigned int max_combo;
     unsigned int great;
     unsigned int cool;

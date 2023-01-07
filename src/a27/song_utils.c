@@ -33,3 +33,4 @@ void ClearKeySounds(void* state){
         song_state->sound_index[i] = 0;
     }
 }
+

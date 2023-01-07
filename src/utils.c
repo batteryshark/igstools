@@ -52,3 +52,9 @@ long long GetCurrentTimestamp() {
     return milliseconds;
 }
 
+float short_to_float(short val){
+    int tens = val / 100;
+    int ones = val % 100;
+    float outval = (float)tens + (float)ones / 100;
+    return outval;
+}

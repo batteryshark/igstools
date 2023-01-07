@@ -124,7 +124,7 @@ def read_rank_name(pb,song_id):
     return read_string_from_ptrtable(pb,g_pchaSongRank,song_id)
     
 def generate_recfile_name(pb,song_id,rank_id):
-    return read_song_name(pb,song_id)+"_"+read_rank_name(pb,rank_id)+"_0.rec"
+    return read_song_name(pb,song_id)+"_"+read_rank_name(pb,rank_id)+".rec"
 
 def create_recfile(pb,entry):
     recfile_name = generate_recfile_name(pb,entry['song_info']['song_name_id'],entry['song_info']['rank_id'])

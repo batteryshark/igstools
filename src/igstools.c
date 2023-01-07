@@ -13,6 +13,8 @@
 #include "utils.h"
 #include "patches.h"
 
+// TODO: REMOVE THIS
+#include "recfile.h"
 
 
 static int pccard_fake_fd = 0xA271337;
@@ -90,7 +92,13 @@ ssize_t pccard_read(int fd, void *buf, size_t count){
 
 
 // --- Entrypoint ---
-void __attribute__((constructor)) initialize(void){    
+void __attribute__((constructor)) initialize(void){   
+    // TODO: REMOVE THIS
+    //load_recfile("/peng/linux/songdata/Cha Cha Queen_Easy.rec",0,0,NULL);
+    //char song_path[256] = "./songdata/";
+    //GenerateEventFilename(0,3,song_path);
+    //printf("Song Path: %s\n",song_path);
+    //exit(0);
     // Set up our various patches.
     const char* video_driver;
     if(getenv("SDL_VIDEODRIVER") != NULL){
