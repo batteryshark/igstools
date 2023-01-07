@@ -26,6 +26,7 @@ enum ANI_JUDGE{
     ANI_JUDGE_BRAVO,
     ANI_JUDGE_PLACEHOLDER_1,
     ANI_JUDGE_PLACEHOLDER_2,
+    ANI_JUDGE_FEVER_HIT,// THIS IS NOT A REAL ENUM
     ANI_JUDGE_FEVER_OVER // THIS IS NOT A REAL ENUM
 };
 
@@ -46,6 +47,8 @@ enum LifebarSetting{
     LIFEBAR_PASS=19,
     LIFEBAR_MAX=28
 };
+
+
 
 typedef struct _JUDGE_RANGE{
     unsigned short min;
@@ -87,5 +90,7 @@ typedef struct _SONG_JUDGE{
 
 
 
-void SongJudgeInit(PSongSettings song_settings);
+void SongJudgeInit(PSongJudge judge,PSongSettings song_settings);
+unsigned char FeverJudge(PSongJudge judge,short cursor_y, short cursor_offset, unsigned char fever_amount, unsigned char player_hit_state, unsigned char player_index, unsigned char player_autoplay, unsigned short total_notes);
+unsigned char CursorJudge(PSongJudge judge,short cursor_y, unsigned char track_index, unsigned char player_hit_state, unsigned char player_index, unsigned char player_autoplay, unsigned short total_notes);
 #endif

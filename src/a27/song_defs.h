@@ -7,13 +7,13 @@
 #define JUDGE_CENTER 0x179
 #define CURSOR_MAX_Y 0x1A0
 enum KeySoundIndex{
-        KEYSOUND_OFF,
-        KEYSOUND_BLUE,
-        KEYSOUND_RED,
-        KEYSOUND_DRUM,
-        KEYSOUND_RIM,
-        KEYSOUND_2DRUM,
-        KEYSOUND_2RIM
+    KEYSOUND_OFF,
+    KEYSOUND_BLUE,
+    KEYSOUND_RED,
+    KEYSOUND_DRUM,
+    KEYSOUND_RIM,
+    KEYSOUND_2DRUM,
+    KEYSOUND_2RIM
 };
 
 
@@ -123,11 +123,11 @@ typedef struct _SongSetting{
 }SongSetting,*PSongSetting;
 
 typedef struct _CURSOR_STATE{
-    unsigned short cursor_flags;
-    unsigned char cursor_exflags;
-    unsigned char cursor_holdflags;
-    short cursor_ypos;
-    short cursor_stretch;
+    unsigned short flags;
+    unsigned char exflags;
+    unsigned char fever_flags;
+    short ypos;
+    short fever_offset;
 }NoteCursor,*PNoteCursor;
 
 typedef struct _SONGSTATE{
@@ -201,22 +201,7 @@ enum SongResultMessage{
     SongResulMessage_PERFECT // Adds +25% to score <-- I think this is PFC
 };
 
-enum SongResultGrade{
-    ResultGradeS,
-    ResultGradeAPlus,
-    ResultGradeA,
-    ResultGradeAMinus,
-    ResultGradeBPlus,
-    ResultGradeB,
-    ResultGradeBMinus,
-    ResultGradeCPlus,
-    ResultGradeC,
-    ResultGradeCMinus,
-    ResultGradeDPlus,
-    ResultGradeD,
-    ResultGradeDMinus,
-    ResultGradeE
-};
+
 
 // This is basically a truncated start of the maingame setting struct.
 typedef struct _SONGRESULT_REQ{

@@ -72,6 +72,3 @@ void ParseRecHeader(PRecFile rec_file, PSongEvent song_event){
     song_event->min_notes = rec_file->header.min_notes;
     song_event->scroll_velocity = calculate_velocity(song_event->tempo,0);
 }
-
-
-

@@ -5,6 +5,8 @@
 
 #define MAX_REC_NOTES 999
 
+
+
 typedef struct _SoundEvent{
     short spawn_beat;
     short event_beat;
@@ -39,5 +41,4 @@ typedef struct _SONG_EVENT{
 void ParseRecHeader(PRecFile rec_file, PSongEvent song_event);
 unsigned int ParseCursorEvents(PRecFileLane* plane,PCursorEvent* cursor_events, float tempo, unsigned char speed_mod);
 unsigned int ParseSoundEvents(PRecFileLane* plane, PSoundEvent* sound_events, float tempo);
-
 #endif

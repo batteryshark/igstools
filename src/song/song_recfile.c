@@ -7,7 +7,7 @@
 
 #define RECFILE_MAGIC "PM1RECFILE  00.2004.0001"
 // These are hardcoded so no worries on that.
-#define OFFSET_REC_P1_CURSOR 0x196
+#define OFFSET_REC_P1_CURSOR 0x0196
 #define OFFSET_REC_P2_CURSOR 0x7EC2
 #define OFFSET_REC_SOUND     0xFBEE
 
