@@ -1,6 +1,13 @@
 #ifndef __SONG_DEFS_H
 #define __SONG_DEFS_H
 
+enum SongMode{
+	SONG_MODE_NORMAL,
+	SONG_MODE_DEMO,
+	SONG_MODE_OPENING,
+	SONG_MODE_STAFF,
+	SONG_MODE_HOWTOPLAY
+};
 
 
 #endif

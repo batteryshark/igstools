@@ -1,9 +1,13 @@
 #include <stdio.h>
-#include <sys/mman.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
-#include "a27/song_manager.h"
+
+#include <sys/mman.h>
+
+
+#include "song/song_manager.h"
 #define PM_SYSTEM_STATUS_SHUTDOWN 4
 #define ADDR_SYSTEM_STATUS 0x08429880
 #define ADDR_SYSTEM_END 0x08056130
@@ -43,6 +47,13 @@ void PatchJump(void* jump_address, void* target_address){
     memcpy(jump_address,jmp_stub,sizeof(jmp_stub));
 }
 
+void msleep(unsigned int num_ms){
+    struct timespec ts;
+    ts.tv_sec = num_ms / 1000;
+    ts.tv_nsec = (num_ms % 1000) * 1000000;
+    nanosleep(&ts,NULL);
+    
+}
 
 long long GetCurrentTimestamp() {
     long long milliseconds;

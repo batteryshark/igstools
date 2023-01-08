@@ -12,7 +12,7 @@
 unsigned char score_multiplier[5] = {10,5,4,2,1};
 
 void SongJudgeInit(PSongJudge judge, PSongSettings song_settings){
-    memset(&judge,0x00,sizeof(SongJudge));
+    memset(judge,0x00,sizeof(SongJudge));
     
     judge->player[0].lifebar = LIFEBAR_START;
     judge->player[1].lifebar = LIFEBAR_START;
@@ -28,6 +28,8 @@ void SongJudgeInit(PSongJudge judge, PSongSettings song_settings){
     judge->settings.offsets.nice.min = JUDGE_CENTER - song_settings->judge.nice;
     judge->settings.offsets.poor.max = JUDGE_CENTER + song_settings->judge.poor;
     judge->settings.offsets.poor.min = JUDGE_CENTER - song_settings->judge.poor;    
+
+    printf("Song Judge Ranges:  Great: %d->%d Cool: %d->%d Nice: %d->%d Poor: %d->%d Miss: %d->%d\n",judge->settings.offsets.great.min,judge->settings.offsets.great.max,judge->settings.offsets.cool.min,judge->settings.offsets.cool.max,judge->settings.offsets.nice.min,judge->settings.offsets.nice.max,judge->settings.offsets.poor.min,judge->settings.offsets.poor.max,judge->settings.offsets.miss.min,judge->settings.offsets.miss.max);
     
     for(int i=0;i<2;i++){
         judge->settings.lifebar_rate[i].fever = song_settings->level_rate[i].fever;
@@ -122,7 +124,7 @@ unsigned char CursorJudge(PSongJudge judge, short cursor_y, unsigned char track_
         judge->player[player_index].miss+=hit_inc;
         
         // Update Our Current Lifebar 
-        judge->player[player_index].lifebar -= (judge->settings.lifebar_rate[player_index].miss * hit_inc);
+        judge->player[player_index].lifebar += (judge->settings.lifebar_rate[player_index].miss * hit_inc);
         
         // Snap to 0 if Lifebar is < 0 and if we hit zero, mark it for results later.
         if(judge->player[player_index].lifebar < LIFEBAR_MIN){
@@ -147,20 +149,17 @@ unsigned char CursorJudge(PSongJudge judge, short cursor_y, unsigned char track_
         lifebar_rate = judge->settings.lifebar_rate[player_index].great;
         score_mult = score_multiplier[JUDGE_GREAT];
         judge_ani = ANI_JUDGE_GREAT;
-    }
-    if(cursor_y >= judge->settings.offsets.cool.min && cursor_y <= judge->settings.offsets.cool.max){
+    }else if(cursor_y >= judge->settings.offsets.cool.min && cursor_y <= judge->settings.offsets.cool.max){
         judge->player[player_index].cool+=hit_inc;
         lifebar_rate = judge->settings.lifebar_rate[player_index].cool;
         score_mult = score_multiplier[JUDGE_COOL];
         judge_ani = ANI_JUDGE_COOL;
-    }
-    if(cursor_y >= judge->settings.offsets.nice.min && cursor_y <= judge->settings.offsets.nice.max){
+    }else if(cursor_y >= judge->settings.offsets.nice.min && cursor_y <= judge->settings.offsets.nice.max){
         judge->player[player_index].nice+=hit_inc;
         lifebar_rate = judge->settings.lifebar_rate[player_index].nice;
         score_mult = score_multiplier[JUDGE_NICE];
         judge_ani = ANI_JUDGE_NICE;
-    }
-    if(cursor_y >= judge->settings.offsets.poor.min && cursor_y <= judge->settings.offsets.poor.max){
+    }else if(cursor_y >= judge->settings.offsets.poor.min && cursor_y <= judge->settings.offsets.poor.max){
         judge->player[player_index].poor+=hit_inc;
         lifebar_rate = judge->settings.lifebar_rate[player_index].poor;
         score_mult = score_multiplier[JUDGE_POOR];
@@ -184,6 +183,6 @@ unsigned char CursorJudge(PSongJudge judge, short cursor_y, unsigned char track_
     if(total_notes == judge->player[player_index].hit_combo){
         judge_ani = ANI_JUDGE_BRAVO;
     }        
-        
+    //printf("Return Judge :%d\n",judge_ani);
     return judge_ani;
 }

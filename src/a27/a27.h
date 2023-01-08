@@ -7,15 +7,6 @@
 
 
 
-#define IO_SET(value,bit) (value |= (1 << bit))
-
-#define IO_UNSET(value,bit) (value &= ~(1 << bit))
-#define IO_ISSET(value,bit) ((value >> bit) & 1)
-
-#define IO_ISSSET(value,old,bit) (IO_ISSET(value,bit) && !IO_ISSET(old,bit))
-#define IO_ISOSET(value,old,bit) (IO_ISSET(value,bit) || IO_ISSET(old,bit))
-
-#pragma pack(1)
 
 // Enums
 
@@ -33,24 +24,7 @@ enum A27_Region{
     REGION_RUSSIA
 };
 
-enum A27_IOLayout{
-    INP_P1_DRUM_L,
-    INP_P1_DRUM_R,
-    INP_P1_RIM_R,
-    INP_P1_BLUE=5,
-    INP_P1_RED,
-    INP_P1_RIM_L,
-    INP_P2_BLUE,
-    INP_P2_RED,
-    INP_P2_RIM_L,
-    INP_P2_DRUM_L,
-    INP_P2_DRUM_R,
-    INP_P2_RIM_R,
-    INP_DEV_1=26,
-    INP_DEV_2,      
-    INP_SW_SERVICE=30,
-    INP_SW_TEST
-};
+
 
 enum A27_LightTest{
     LIGHT_2P_3 = 4,

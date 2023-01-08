@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "pm_funcs.h"
-#include "a27/song_defs.h"
+#include "song/song_defs.h"
 
 unsigned short (*song_wSongNameGet)(unsigned short chart_id) = (void*)0x08077188;
 unsigned char (*song_bSongRankGet)(unsigned short chart_id) = (void*)0x080771A0;

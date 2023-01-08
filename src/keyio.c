@@ -22,11 +22,6 @@
 
 static const char* default_event_device = "/dev/input/by-path/platform-i8042-serio-0-event-kbd";
 static pthread_t hthread;
-static IOTrackStates track_states;
-
-PIOTrackStates GetIOTrackStates(void){
-    return &track_states;
-}
 
 
 static struct iostate keystate;
@@ -59,8 +54,6 @@ unsigned int KeyIO_GetSwitches(void){
     // Dev Switches
     if(keystate.hidden_sw[0]){IO_SET(n_state,INP_DEV_1);}
     if(keystate.hidden_sw[1]){IO_SET(n_state,INP_DEV_2);}    
-    
-    //
     
     return n_state;
 }

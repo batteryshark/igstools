@@ -25,6 +25,7 @@ typedef struct _JUDGE_LEVEL_RATE{
     float miss;
 }JudgeLevelRate,*PJudgeLevelRate;
 
+
 typedef struct _SONG_SETTINGS{
     unsigned short cmd;
     unsigned char state;
@@ -34,7 +35,7 @@ typedef struct _SONG_SETTINGS{
     unsigned char player_enable[2];
     unsigned char player_autoplay[2];
     unsigned char player_song_version[2];
-    unsigned char player_chartid[2];
+    unsigned short player_chartid[2];
     PlayerMod player_mod[2];    
     JudgeMargin judge;
     unsigned char player_rating_level[2];

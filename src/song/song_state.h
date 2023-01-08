@@ -32,6 +32,7 @@ typedef struct _PLAYER_HIT_STATE{
     unsigned char track[8];
 }PlayerHitState,*PPlayerHitState;
 
+
 typedef struct _SONGSTATE{
     unsigned short cmd;
     unsigned short state;
