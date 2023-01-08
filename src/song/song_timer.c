@@ -121,7 +121,7 @@ static void *soundevent_thread(void* arg){
 }
 
 // We'll add a measure bar either to a free slot, or a slot we've already occupied as a measure bar.
-void AddMeasureBar(PSongState song_state, unsigned char player_index, long target_ms){
+void AddMeasureBar(PSongState song_state, unsigned char player_index, PMeasureEvent measure){
     PNoteCursor target;
    
     // Attempt 1 - Fill a measure bar slot that already exists.
@@ -130,8 +130,8 @@ void AddMeasureBar(PSongState song_state, unsigned char player_index, long targe
             if(IsMeasureBarPCursor(target)){
                 SetMeasureCursor(target);
                 
-                ts.player[player_index].cursor[i].start = song_elapsed;
-                ts.player[player_index].cursor[i].end = target_ms;
+                ts.player[player_index].cursor[i].start = measure->spawn_ms;
+                ts.player[player_index].cursor[i].end = measure->event_ms;
                 return;
             }
     }
@@ -142,8 +142,8 @@ void AddMeasureBar(PSongState song_state, unsigned char player_index, long targe
         target = &song_state->player_cursor[player_index].cursor[i];
         if(!IsActivePCursor(target)){
                 SetMeasureCursor(target);
-                ts.player[player_index].cursor[i].start = song_elapsed;
-                ts.player[player_index].cursor[i].end = target_ms;
+                ts.player[player_index].cursor[i].start = measure->spawn_ms;
+                ts.player[player_index].cursor[i].end = measure->event_ms;
                 return;
         }
     }
@@ -170,22 +170,21 @@ void AddCursor(PSongState song_state, unsigned char player_index, PCursorEvent c
 
 static void *cursorevent_thread(void* arg){
 
-    
-    int current_measure = 0;
-    int last_measure = -1;
     while(in_song){             
-        current_measure = current_beat / 32;
-            
+
         for(int i=0;i<2;i++){
             // So what we need to do here is - every beat, look if we're in a new measure of the song
             // if we are, spawn one and give it a hit date of the next ms offset of the next measure
             
             if(!tp.state->player_isplaying[i]){continue;}
             
-            if(last_measure != current_measure){
-                long target_ms = (current_measure+1) * tp.event->ms_per_measure;
-                AddMeasureBar(tp.state,i,target_ms);
+            for(int j=0;j<tp.event->num_measure_events;j++){
+                    if(tp.event->measure_events[i].measure[j].spawn_ms <= song_elapsed && tp.event->measure_events[i].measure[j].spawn_ms > 0){
+                        AddMeasureBar(tp.state,i,&tp.event->measure_events[i].measure[j]);
+                        tp.event->measure_events[i].measure[j].spawn_ms = -1;
+                    }
             }
+            
             
             unsigned short num_cursor_events = (i) ? tp.event->p2_num_cursor_events : tp.event->p1_num_cursor_events;
             PCursorEvent player_cursor_events = (i) ? tp.event->p2_event : tp.event->p1_event;
@@ -197,7 +196,7 @@ static void *cursorevent_thread(void* arg){
                 }
             }
         }           
-        last_measure = current_measure;
+
         msleep(1);
     }
 }

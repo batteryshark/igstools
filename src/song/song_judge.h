@@ -3,7 +3,7 @@
 
 #include "song_settings.h"
 
-#define JUDGE_CENTER 0x179
+#define JUDGE_CENTER 0x175
 #define JUDGE_MAX JUDGE_CENTER + 50
 #define JUDGE_MIN JUDGE_CENTER - 50
 

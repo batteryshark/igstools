@@ -145,6 +145,7 @@ unsigned int SongManager_Start(void* response_buffer){
     event.p1_num_cursor_events = ParseCursorEvents((PRecFileLane*)&rec_file.p1_events,(PCursorEvent*)&event.p1_event,event.tempo,settings.player_mod[0].speed);
     event.p2_num_cursor_events = ParseCursorEvents((PRecFileLane*)&rec_file.p2_events,(PCursorEvent*)&event.p2_event,event.tempo,settings.player_mod[1].speed);
     event.num_sound_events = ParseSoundEvents((PRecFileLane*)&rec_file.sound_events,(PSoundEvent*)&event.sound_event,event.tempo);
+    GenerateMeasureCursors(&event,settings.player_mod[0].speed,settings.player_mod[1].speed);
     printf("Loaded %d P1 Cursors, %d P2 Cursors, %d Sound Events\n",event.p1_num_cursor_events,event.p2_num_cursor_events,event.num_sound_events);
     SetPlayerVelocity(&event,settings.player_mod[0].speed,settings.player_mod[1].speed);
     

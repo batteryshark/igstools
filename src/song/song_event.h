@@ -21,6 +21,15 @@ typedef struct _CursorEvent{
     short fever_offset;
 }CursorEvent,*PCursorEvent;
 
+typedef struct _MeasureEvent{
+    long event_ms;
+    long spawn_ms;
+}MeasureEvent,*PMeasureEvent;
+
+typedef struct _MeasureEvents{
+    MeasureEvent measure[MAX_REC_NOTES];
+}MeasureEvents,*PMeasureEvents;
+
 typedef struct _SONG_EVENT{
     float tempo;
     float ms_per_beat;
@@ -34,6 +43,8 @@ typedef struct _SONG_EVENT{
     unsigned char player_velocity[2];
     unsigned short p1_num_cursor_events;
     unsigned short p2_num_cursor_events;
+    unsigned short num_measure_events;
+    MeasureEvents measure_events[2];
     unsigned short num_sound_events;
     CursorEvent p1_event[MAX_REC_NOTES];
     CursorEvent p2_event[MAX_REC_NOTES];
@@ -45,4 +56,5 @@ void ParseRecHeader(PRecFile rec_file, PSongEvent song_event);
 unsigned int ParseCursorEvents(PRecFileLane* plane,PCursorEvent* cursor_events, float tempo, unsigned char speed_mod);
 unsigned int ParseSoundEvents(PRecFileLane* plane, PSoundEvent* sound_events, float tempo);
 void SetPlayerVelocity(PSongEvent song_event, unsigned char p1_speed_mod, unsigned char p2_speed_mod);
+void GenerateMeasureCursors(PSongEvent event, unsigned char speed_mod_p1, unsigned char speed_mod_p2);
 #endif

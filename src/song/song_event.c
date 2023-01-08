@@ -10,7 +10,7 @@
 // First Value is Normal, Followed by HiSpeed 1,2,3,4. Any BPM over 145 is high speed.
 static const unsigned char cursor_ppb_fast[5] = {12,18,20,24,27};
 static const unsigned char cursor_ppb_slow[5] = {14,20,24,27,32};
-unsigned int speed_mod_spawn_ms[5] = {32,24,16,8,4};
+unsigned int speed_mod_spawn_ms[5] = {24,20,16,12,8};
 
 unsigned char calculate_velocity(float tempo, unsigned int speed_mod){
         if(tempo > 145.0f){
@@ -20,6 +20,16 @@ unsigned char calculate_velocity(float tempo, unsigned int speed_mod){
         return cursor_ppb_slow[speed_mod];
 }
 
+void GenerateMeasureCursors(PSongEvent event, unsigned char speed_mod_p1, unsigned char speed_mod_p2){
+    float ms_per_beat = ((float)((60 * 1000) / event->tempo)) / 8;   
+    event->num_measure_events = (unsigned int)((float)event->num_beats/32) + 1;
+    for(int i=0;i<event->num_measure_events;i++){
+            event->measure_events[0].measure[i].event_ms = (i * event->ms_per_measure);
+            event->measure_events[0].measure[i].spawn_ms = event->measure_events[0].measure[i].event_ms - (ms_per_beat * speed_mod_spawn_ms[speed_mod_p1]);
+            event->measure_events[1].measure[i].event_ms = (i * event->ms_per_measure);
+            event->measure_events[1].measure[i].spawn_ms = event->measure_events[1].measure[i].event_ms - (ms_per_beat * speed_mod_spawn_ms[speed_mod_p2]);            
+    }
+}
 
 
 unsigned int ParseCursorEvents(PRecFileLane* plane,PCursorEvent* cursor_events, float tempo, unsigned char speed_mod){
@@ -31,7 +41,7 @@ unsigned int ParseCursorEvents(PRecFileLane* plane,PCursorEvent* cursor_events, 
         PRecFileLane current_lane = (PRecFileLane)plane+i;
         for(int j=0;j<current_lane->num_events;j++){
             // Standard Values we need.            
-            PCursorEvent cse = (PCursorEvent)cursor_events+j;
+            PCursorEvent cse = (PCursorEvent)cursor_events+num_cursor_events;
             cse->event_ms = (long)((float)(current_lane->event[j] & 0x3FFF) * ms_per_beat);
             cse->spawn_ms = cse->event_ms - (ms_per_beat * speed_mod_spawn_ms[speed_mod]);
             cse->flags = (i << 6) | 0x02;
@@ -58,7 +68,7 @@ unsigned int ParseSoundEvents(PRecFileLane* plane, PSoundEvent* sound_events, fl
         PRecFileLane current_lane = (PRecFileLane)plane+i;
         for(int j=0;j<current_lane->num_events;j++){
              // Standard Values we need.
-            PSoundEvent cse = (PSoundEvent)sound_events+j;
+            PSoundEvent cse = (PSoundEvent)sound_events+num_sound_events;
             cse->event_ms = (long)((float)(current_lane->event[j] & 0x3FFF) * ms_per_beat);
             // TODO: This feels roughly right - mess with this multiplier to sync the music with the beats.
             cse->spawn_ms = cse->event_ms - (ms_per_beat * 8);   
