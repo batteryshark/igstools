@@ -25,6 +25,11 @@ void A27Emu_Process(PA27WriteMessage msg){
         
     // The rest depends on the program being executed...
     switch(msg->header.system_mode){
+        case A27_MODE_HEADER_UPDATE:
+        case A27_MODE_6:
+            a27_state.msg.header.system_mode = msg->header.system_mode;
+            a27_state.msg.header.data_size = msg->header.data_size;            
+            break;
         case A27_MODE_READWRITE_TEST:            
             A27_Program_1(&a27_state);
             break;
@@ -59,6 +64,7 @@ void A27Emu_Process(PA27WriteMessage msg){
             A27_Program_25(&a27_state);
             break;
         default:// Anything unhandled we don't care about.
+            //printf("[A27Emulator::Unhandled Command: %d\n",msg->header.system_mode);
             a27_state.msg.header.system_mode = msg->header.system_mode;
             a27_state.msg.header.data_size = msg->header.data_size;
             break;
