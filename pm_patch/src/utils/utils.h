@@ -2,6 +2,7 @@
 #define __UTILS__H
 // -- Debug
 void PrintHex(unsigned char* data, unsigned int len);
+void PrintBacktrace(void);
 // -- System
 void QuitProcess(void);
 // -- Patching

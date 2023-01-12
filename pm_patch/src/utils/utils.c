@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <signal.h>
+#include <execinfo.h>
 #ifdef A27_EMU_SUPPORTED
 #include "../a27/song/song_manager.h"
 #endif
@@ -17,6 +18,13 @@ void PrintHex(unsigned char* data, unsigned int len) {
     printf("\n");
 }
 
+void PrintBacktrace(void){
+        void *array[64];
+    unsigned long size;
+
+    size = backtrace(array, 64);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+}
 
 // -- Process Functions
 #define PM_SYSTEM_STATUS_SHUTDOWN 4
