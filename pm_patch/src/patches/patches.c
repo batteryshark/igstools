@@ -209,6 +209,17 @@ void Patch_SkipWarning(void){
         *(unsigned int*)ADDR_SKIP_WARNING2 = 10;
 }
 
+int (*real_soundplay)(unsigned int channel, int volume) = (void*)0x8065524;
+int fake_soundplay(unsigned int channel, int volume){
+    if(channel == 0 && volume == 22){return 1;}
+    return real_soundplay(channel,volume);
+}
+
+void Patch_StaffAudio(void){
+    printf("[Patches::StaffAudio] Patching Staff Audio Crash.\n");
+    PatchCall((void*)0x0807C34F,(void*)fake_soundplay);
+}
+
 void Patch_FilesystemPaths(void){
     unsigned int num_entries_in_table = sizeof(linux_path_entries) / sizeof(StrReplaceEntry);
     for(int i=0;i<num_entries_in_table;i++){

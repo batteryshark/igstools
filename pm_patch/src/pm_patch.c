@@ -102,7 +102,8 @@ void __attribute__((constructor)) initialize(void){
     
     // We'll always patch the filesystem paths to not be absolute [damn sith].
     Patch_FilesystemPaths();
-  
+    // We'll also always patch the hang that happens on staff audio.
+    Patch_StaffAudio();
     // Set up our various 'optional' patches.
     if(getenv("PM_WINDOWED")){Patch_SetWindowedMode();}
     
