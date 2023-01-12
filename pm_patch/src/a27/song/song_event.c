@@ -6,6 +6,7 @@
 #include "song_recfile.h"
 #include "song_event.h"
 
+
 // Pixel-Per-Beat, used in calculating Fever Beats and To a Lesser Extent Scrolling.
 // First Value is Normal, Followed by HiSpeed 1,2,3,4. Any BPM over 145 is high speed.
 static const unsigned char cursor_ppb_fast[5] = {12,18,20,24,27};
@@ -85,7 +86,7 @@ void ParseRecHeader(PRecFile rec_file, PSongEvent song_event){
     // Given Beats Per Minute, calculate how many ms per beat. (quarter note)
     song_event->ms_per_beat = (float)((60 * 1000) / song_event->tempo);
     song_event->ms_per_measure = song_event->ms_per_beat * 4;
-    song_event->ms_per_ebeat = (song_event->ms_per_beat / 8);
+    song_event->ms_per_ebeat = (int)(song_event->ms_per_beat / 8);
     printf("Tempo: %.2f MSPerBeat: %.2f MSPerEBeat: %.2f MSPerMeasure: %.2f\n",song_event->tempo, song_event->ms_per_beat, song_event->ms_per_ebeat, song_event->ms_per_measure);
     song_event->chart_id = rec_file->header.chart_id;
     song_event->num_beats = rec_file->header.num_beats;
