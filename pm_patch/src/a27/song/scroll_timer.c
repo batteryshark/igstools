@@ -35,6 +35,7 @@ static void *scrolling_timer_thread(void* arg){
             song_elapsed = SongTimer_GetSongElapsed();
             for(int i=0;i<2;i++){
                 if(!tp.state->player_isplaying[i]){continue;}
+                tp.state->current_beat[i] = SongTimer_GetCurrentBeat(tp.event->ms_per_ebeat);
                 float tail_scroll = tp.event->ms_per_beat * scroll_tail_speedmod[tp.settings->player_mod[i].speed];
                 for(int j=0;j<PLAYER_CURSOR_MAX_ACTIVE;j++){
                     // We only scroll active stuff.
