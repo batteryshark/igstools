@@ -13,4 +13,6 @@ void Patch_DevTest(void);
 void Patch_Autoplay(void);
 void Patch_SkipWarning(void);
 void Patch_FilesystemPaths(void);
+void Patch_StaffAudio(void);
+void Patch_Language(void);
 #endif
