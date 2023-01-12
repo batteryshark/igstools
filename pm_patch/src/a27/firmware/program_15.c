@@ -18,6 +18,9 @@ void A27_Program_15(PA27WriteMessage req, PA27ReadMessage res){
         case A27_SONGMODE_PLAYBACK_BODY:
             res->header.data_size = SongManager_Record_Body((void*)req->data,(void*)res->data);
             break;
+        case A27_SONGMODE_2:
+            res->header.data_size = SongManager_SongMode_2((void*)req->data,(void*)res->data);
+            break;
         // -- Function 3: This tells the card what song we're playing and sets our session options.
         // -- This is called twice, so don't do any one-shot stuff in here.
         case A27_SONGMODE_MAINGAME_SETTING:
