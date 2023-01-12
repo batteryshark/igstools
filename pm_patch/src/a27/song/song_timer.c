@@ -30,7 +30,7 @@ long long SongTimer_GetSongElapsed(void){
 }
 
 short SongTimer_GetCurrentBeat(float ms_per_ebeat){
-    return (short)song_elapsed / ms_per_ebeat;
+    return (short)(song_elapsed / ms_per_ebeat);
 }
 
 static void *song_timer_thread(void* arg){
@@ -39,8 +39,6 @@ static void *song_timer_thread(void* arg){
     thread_running = 1;
     while(SongManager_InSong()){                
         song_elapsed = GetCurrentTimestamp() - song_start;
-        tp.state->current_beat[0] = (short)song_elapsed / tp.event->ms_per_ebeat;
-        tp.state->current_beat[1] = (short)song_elapsed / tp.event->ms_per_ebeat;
     }
     thread_running = 0;
 }
