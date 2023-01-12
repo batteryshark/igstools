@@ -2,6 +2,8 @@
 #define __SONG_JUDGE_H
 
 #include "song_settings.h"
+#include "song_event.h"
+#include "song_state.h"
 
 #define JUDGE_CENTER 0x171
 #define JUDGE_MAX JUDGE_CENTER + 50
@@ -81,7 +83,7 @@ typedef struct _PLAYER_JUDGECOUNT{
     float lifebar;
     unsigned char lifebar_hit_zero;
     unsigned int hit_combo;
-    unsigned int current_fever_combo;
+    unsigned int total_fever_hits;
     unsigned int max_combo;
     unsigned int fever;
     unsigned int great;
@@ -100,6 +102,5 @@ typedef struct _SONG_JUDGE{
 
 
 void SongJudgeInit(PSongJudge judge,PSongSettings song_settings);
-unsigned char FeverJudge(PSongJudge judge,short cursor_y, short cursor_offset, unsigned char fever_amount, unsigned char player_hit_state, unsigned char player_index, unsigned char player_autoplay, unsigned short total_notes);
-unsigned char CursorJudge(short cursor_y, unsigned char player_autoplay);
+void Update_Judgement(PSongSettings settings, PSongEvent event, PSongState state, PSongJudge judge);
 #endif

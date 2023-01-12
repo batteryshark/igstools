@@ -73,11 +73,6 @@ void EventTimer_AddToSoundEvents(unsigned short event_value);
 void ScrollTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event);
 void ScrollTimer_Stop(void);
 unsigned char ScrollTimer_IsRunning(void);
-// Judge Timer
-void JudgeTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event, PSongJudge judge);
-void JudgeTimer_Stop(void);
-unsigned char JudgeTimer_IsRunning(void);
-void JudgeTimer_Update(void);
 // InputState Timer
 void InputStateTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event);
 void InputStateTimer_Stop(void);

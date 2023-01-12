@@ -145,6 +145,7 @@ def get_song_packets_from_dump(dump_path):
     
     
 def carve_songs_from_song_packets(packets):
+    song_count = 0
     songs = {}
     song_start = 0
     song_end = 0    
@@ -186,6 +187,22 @@ def carve_songs_from_song_packets(packets):
                 song_token = None
                 song_info = None
                 song_packets = []
+        elif(req.startswith(b"\x00\x00")):
+            print("Record Header Packet")
+            print(binascii.hexlify(req))
+            print(binascii.hexlify(res))
+        elif(req.startswith(b"\x03\x00")):
+            pass
+        elif(req.startswith(b"\x04\x00")):
+            pass            
+        elif(req.startswith(b"\x01\x00")):
+            print("Record Body Packet")
+            print(binascii.hexlify(req))
+            print(binascii.hexlify(res))
+        else:
+            print("IDK Packet")
+            print(binascii.hexlify(req))
+            print(binascii.hexlify(res))        
         
     return songs
 
@@ -262,7 +279,8 @@ def get_packet_event_info(packet):
             sound_index[int(i/2)] = cs
 
     events = {
-    'Note': note_counter
+    'Note': note_counter,
+    "Raw":binascii.hexlify(packet)
     }
     
     if sound_index != {}:

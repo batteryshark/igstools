@@ -40,9 +40,9 @@ typedef struct _SONGSTATE{
     unsigned short sound_index[32];
     PlayerCursor player_cursor[2];
     unsigned short player_combo[2];
-    unsigned short player_fever_beat[2];
+    unsigned short player_fever_combo[2];
     unsigned char player_isplaying[2];
-    unsigned char player_fever_combo[2];
+    unsigned char player_fever_beat[2];
     PlayerAnimation player_judge_graphic[2];
     PlayerAnimation player_track_hit_animation[2];
     PlayerAnimation player_cursor_hit_animation[2];

@@ -67,7 +67,7 @@ unsigned int SongManager_Reset(void* response_buffer){
 void SongManager_Stop(void){
     printf("SongManager_Stop\n");
     SongManager_StopSong();
-    while(SongTimer_IsRunning() || EventTimer_IsRunning() || ScrollTimer_IsRunning() || JudgeTimer_IsRunning() || InputStateTimer_IsRunning()){}   
+    while(SongTimer_IsRunning() || EventTimer_IsRunning() || ScrollTimer_IsRunning() || InputStateTimer_IsRunning()){}   
 }
 
 unsigned int SongManager_Start(void* response_buffer){
@@ -105,20 +105,25 @@ unsigned int SongManager_Start(void* response_buffer){
     SongManager_StartSong();
     EventTimer_Start(&settings,&state,&event);
     ScrollTimer_Start(&settings,&state,&event);
-    JudgeTimer_Start(&settings,&state,&event,&judge); 
     InputStateTimer_Start(&settings,&state,&event); 
     SongTimer_Start(&settings,&state,&event);
 
 
     // We'll block on waiting for our threads to start.
-    while(!SongTimer_IsRunning() || !EventTimer_IsRunning() || !ScrollTimer_IsRunning() || !JudgeTimer_IsRunning() || !InputStateTimer_IsRunning()){}
+    while(!SongTimer_IsRunning() || !EventTimer_IsRunning() || !ScrollTimer_IsRunning() || !InputStateTimer_IsRunning()){}
     return sizeof(SongState);    
 }
 
+unsigned short last_beat = 0;
 unsigned int SongManager_Update(void* response_buffer){
     state.cmd = A27_SONGMODE_MAINGAME_PROCESS;
-    InputStateTimer_Update();
-    JudgeTimer_Update();
+    
+    unsigned short current_beat = SongTimer_GetCurrentBeat(event.ms_per_ebeat);
+
+    if(current_beat != last_beat){
+        InputStateTimer_Update();
+        Update_Judgement(&settings, &event, &state, &judge);        
+    }
     long long song_elapsed = SongTimer_GetSongElapsed();
     for(int i=0; i < event.num_sound_events; i++){
         PSoundEvent ce = &event.sound_event[i];                
@@ -133,7 +138,7 @@ unsigned int SongManager_Update(void* response_buffer){
     for(int i=0;i<32;i++){
         state.sound_index[i] = 0;
     }
-    
+    last_beat = current_beat;
     memset(&state.player_cursor_hit_animation[0],0x00,sizeof(PlayerAnimation));
     memset(&state.player_judge_graphic[0],0x00,sizeof(PlayerAnimation));
     memset(&state.player_cursor_hit_animation[1],0x00,sizeof(PlayerAnimation));

@@ -10,8 +10,8 @@
 // This calculates a letter grade based off of the percentage that you were to FPC
 unsigned char CalculateGrade(PSongJudge judge, unsigned char player_index, unsigned short total_notes){
     // First, calculate the max value.    
-    unsigned int max_nval = total_notes * 4; // where 4 is all "GREAT"
-    unsigned int jval = (judge->player[player_index].great * 4) + (judge->player[player_index].cool * 3) + (judge->player[player_index].nice * 2) + (judge->player[player_index].poor * 1);
+    unsigned int max_nval = total_notes * 4; // where 4 is all "GREAT" or "FEVER"
+    unsigned int jval = (judge->player[player_index].fever * 4) + (judge->player[player_index].great * 4) + (judge->player[player_index].cool * 3) + (judge->player[player_index].nice * 2) + (judge->player[player_index].poor * 1);
     float grade = ((float)jval / (float)max_nval) * 100.f;
     if(grade > 99.9f){return ResultGradeS;}
     if(grade > 96.9f){return ResultGradeAPlus;}
@@ -37,7 +37,7 @@ void GetSongResult(PSongSettings settings, PSongJudge judge,PSongResult res, uns
         if(!settings->player_enable[i]){continue;}        
         unsigned int player_clear = 0;
         res->player_num_notes[i] = total_notes;
-        res->player_fever_beat[i] = judge->player[i].fever;
+        res->player_fever_beat[i] = judge->player[i].total_fever_hits;
         res->player_hit[i].great = judge->player[i].great;
         res->player_hit[i].cool = judge->player[i].cool;
         res->player_hit[i].nice = judge->player[i].nice;
@@ -55,7 +55,7 @@ void GetSongResult(PSongSettings settings, PSongJudge judge,PSongResult res, uns
         if(res->player_num_notes[i] == res->player_max_combo[i]){
             res->player_message[i] = SongResulMessage_BRAVO;
         }
-        if(res->player_num_notes[i] == (res->player_hit[i].great + res->player_fever_beat[i])){
+        if(res->player_num_notes[i] == (res->player_hit[i].great + judge->player[i].fever)){
             res->player_message[i] = SongResulMessage_PERFECT;
         }
         // If either player clears, we'll just mark clear.
