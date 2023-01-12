@@ -163,7 +163,6 @@ void Update_Judgement(PSongSettings settings, PSongEvent event, PSongState state
                         float lifebar_rate = judge->settings.lifebar_rate[i].fever;                        
                         unsigned short fever_max_amount = GetMaxFeverBeat(state->player_cursor[i].cursor[j].fever_offset,event->player_velocity[i]);
                         
-                        printf("Player: %d Fever [%d/%d] = %d\n",i+1,state->player_fever_combo[i],state->player_fever_beat[i],fever_max_amount);
                         if(state->player_fever_combo[i] < fever_max_amount){
                             if(state->player_fever_combo[i] < state->player_fever_beat[i]){
                                 judge->player[i].fever++;  
@@ -286,85 +285,3 @@ void Update_Judgement(PSongSettings settings, PSongEvent event, PSongState state
         state->player_score_copy[i] = judge->player[i].score;           
     }
 }
-
-/*
-    // To account for double-hit cursors, we have to increment the beat count.
-    int hit_inc = 1;
-    if(track_index == 2 || track_index == 4){
-            hit_inc++;
-    }
-    
-    if(judgement == JV_JUDGE_MISS){
-        // Record Max Combo if necessary and reset Hit Combo
-        if(judge->player[player_index].max_combo < judge->player[player_index].hit_combo){
-            judge->player[player_index].hit_combo = judge->player[player_index].max_combo;   
-        }
-        judge->player[player_index].hit_combo = 0;
-        // Increment Our Miss Count
-        judge->player[player_index].miss+=hit_inc;
-        
-        // Update Our Current Lifebar 
-        judge->player[player_index].lifebar += (judge->settings.lifebar_rate[player_index].miss * hit_inc);
-        
-        // Snap to 0 if Lifebar is < 0 and if we hit zero, mark it for results later.
-        if(judge->player[player_index].lifebar < LIFEBAR_MIN){
-            judge->player[player_index].lifebar = LIFEBAR_MIN;
-        }
-        if(judge->player[player_index].lifebar == LIFEBAR_MIN){
-            judge->player[player_index].lifebar_hit_zero = 1;
-        }
-        return judgement;
-    }
-    
-    // If we haven't missed a cursor, yet we're not hitting one at the moment, we'll skip everything else.
-    if(!player_hit_state && !player_autoplay){return ANI_JUDGE_NONE;}
-
-    unsigned char judge_ani = ANI_JUDGE_NONE;
-    float lifebar_rate = 0;
-    unsigned int score_mult = 0;
-    
-    
-    // Now, we'll cascade the different judgements.
-    if(judgement == JV_JUDGE_GREAT){
-        judge->player[player_index].great+=hit_inc;
-        lifebar_rate = judge->settings.lifebar_rate[player_index].great;
-        score_mult = score_multiplier[JUDGE_GREAT];
-        judge_ani = ANI_JUDGE_GREAT;
-    }else if(judgement == JV_JUDGE_COOL){
-        judge->player[player_index].cool+=hit_inc;
-        lifebar_rate = judge->settings.lifebar_rate[player_index].cool;
-        score_mult = score_multiplier[JUDGE_COOL];
-        judge_ani = ANI_JUDGE_COOL;
-    }else if(judgement == JV_JUDGE_NICE){
-        judge->player[player_index].nice+=hit_inc;
-        lifebar_rate = judge->settings.lifebar_rate[player_index].nice;
-        score_mult = score_multiplier[JUDGE_NICE];
-        judge_ani = ANI_JUDGE_NICE;
-    }else if(judgement == JV_JUDGE_POOR){
-        judge->player[player_index].poor+=hit_inc;
-        lifebar_rate = judge->settings.lifebar_rate[player_index].poor;
-        score_mult = score_multiplier[JUDGE_POOR];
-        judge_ani = ANI_JUDGE_POOR;
-    }    
-    
-    // Update Score
-    judge->player[player_index].score += (score_mult * judge->player[player_index].hit_combo);
-    
-    // Update Hit Combo
-    judge->player[player_index].hit_combo+=hit_inc;
-    
-    // Update Lifebar
-    judge->player[player_index].lifebar += (lifebar_rate * hit_inc);
-    // Snap Lifebar to Max if Necessary.
-    if(judge->player[player_index].lifebar > LIFEBAR_MAX){
-        judge->player[player_index].lifebar = LIFEBAR_MAX;
-    }
-        
-    // If we full combo'd the song, we'll send a different animation back.
-    if(total_notes == judge->player[player_index].hit_combo){
-        judge_ani = ANI_JUDGE_BRAVO;
-    }        
-    //printf("Return Judge :%d\n",judge_ani);
-    return judge_ani;
-}
-*/
