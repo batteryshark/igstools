@@ -83,11 +83,20 @@ void EventTimer_ClearCursor(PSongState song_state, unsigned char player_index, u
 }
 
 void EventTimer_AddToSoundEvents(unsigned short event_value){
-    for(int i=15;i<32;i++){
+    for(int i=16;i<32;i++){
         if(!tp.state->sound_index[i]){
            tp.state->sound_index[i] = event_value;   
         }
     }    
+}
+
+
+void EventTimer_ClearSoundEvents(void){
+    for(int i=0;i<32;i++){
+        if(!tp.state->sound_index[i]){
+           tp.state->sound_index[i] = 0;   
+        }        
+    }       
 }
 
 static void *event_thread(void* arg){
