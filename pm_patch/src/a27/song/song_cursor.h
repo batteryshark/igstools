@@ -15,7 +15,7 @@ typedef struct _CURSOR_STATE{
 #define HideCursor(x) x.flags &= ~2
 #define GetCursorFeverSize(x) x.y_pos + x.fever_offset
 
-#define IsActivePCursor(x) (x->flags != 0)
+#define IsActivePCursor(ts,pi,ci) (ts->player[pi].cursor[ci].end != 0)
 #define IsActiveCursor(ts,pi,ci) (ts.player[pi].cursor[ci].end != 0)
 #define IsHiddenCursor(x) ((x.flags & 2) == 0)
 #define IsFeverCursor(x) ((x.fever_flags & 2) != 0)

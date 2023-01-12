@@ -30,6 +30,7 @@ enum PM_Record_Mode{
 #include "song_settings.h"
 #include "song_state.h"
 #include "song_event.h"
+#include "song_judge.h"
 
 typedef struct _CURSOR_TS{
     long long start;
@@ -67,18 +68,26 @@ void EventTimer_ClearCursor(PSongState song_state, unsigned char player_index, u
 void EventTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event);
 void EventTimer_Stop(void);
 unsigned char EventTimer_IsRunning(void);
+void EventTimer_AddToSoundEvents(unsigned short event_value);
 // Scrolling Timer
 void ScrollTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event);
 void ScrollTimer_Stop(void);
 unsigned char ScrollTimer_IsRunning(void);
 // Judge Timer
-void JudgeTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event);
+void JudgeTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event, PSongJudge judge);
 void JudgeTimer_Stop(void);
 unsigned char JudgeTimer_IsRunning(void);
+void JudgeTimer_Update(void);
 // InputState Timer
 void InputStateTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event);
 void InputStateTimer_Stop(void);
 unsigned char InputStateTimer_IsRunning(void);
+void InputStateTimer_Update(void);
+PIOTrackStates InputStateTimer_GetTrackState(void);
+unsigned short InputStateTimer_GetKeySoundMapping(unsigned char track_index);
+
+unsigned char SongManager_InSong(void);
+void SongManager_StopSong(void);
 
 // -- API --
 unsigned int SongManager_Init(void* setting_data, void* response_buffer);

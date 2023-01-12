@@ -11,6 +11,35 @@
 
 unsigned char score_multiplier[5] = {10,5,4,2,1};
 
+struct JudgeRange{
+    unsigned short deviation;
+    unsigned char rating;
+};
+
+static struct JudgeRange judge_ranges[] ={
+    {0,JV_JUDGE_GREAT},
+    {0,JV_JUDGE_COOL},
+    {0,JV_JUDGE_NICE},
+    {0,JV_JUDGE_POOR},
+    {0,JV_JUDGE_MISS}
+};
+
+unsigned char GetPositionJudgement(short y_offset) {
+    // If we're short of even the "Poor" judgement zone, we don't care.
+    // Note: This will also prevent the "miss" in our ranges from firing on the min deviation.
+    if(y_offset < JUDGE_CENTER - judge_ranges[1].deviation){return JV_JUDGE_NONE;}
+    for (int i = 0; i < 5; i++) {
+        int deviation = judge_ranges[i].deviation;
+        if (y_offset < JUDGE_CENTER + deviation && y_offset > JUDGE_CENTER - deviation) {
+            return judge_ranges[i].rating;
+        }        
+    }
+    if(y_offset > JUDGE_CENTER + judge_ranges[4].deviation){
+        return JV_JUDGE_MISS;
+    }
+    return JV_JUDGE_GREAT;
+}
+
 void SongJudgeInit(PSongJudge judge, PSongSettings song_settings){
     memset(judge,0x00,sizeof(SongJudge));
     
@@ -18,19 +47,19 @@ void SongJudgeInit(PSongJudge judge, PSongSettings song_settings){
     judge->player[1].lifebar = LIFEBAR_START;
     
     // Set up Judgement Offsets
-    judge->settings.offsets.miss.min = JUDGE_MIN;
-    judge->settings.offsets.miss.max = JUDGE_MAX;
-    judge->settings.offsets.great.max = JUDGE_CENTER + song_settings->judge.great;
-    judge->settings.offsets.great.min = JUDGE_CENTER - song_settings->judge.great;
-    judge->settings.offsets.cool.max = JUDGE_CENTER + song_settings->judge.cool;
-    judge->settings.offsets.cool.min = JUDGE_CENTER - song_settings->judge.cool;
-    judge->settings.offsets.nice.max = JUDGE_CENTER + song_settings->judge.nice;
-    judge->settings.offsets.nice.min = JUDGE_CENTER - song_settings->judge.nice;
-    judge->settings.offsets.poor.max = JUDGE_CENTER + song_settings->judge.poor;
-    judge->settings.offsets.poor.min = JUDGE_CENTER - song_settings->judge.poor;    
-
-    printf("Song Judge Ranges:  Great: %d->%d Cool: %d->%d Nice: %d->%d Poor: %d->%d Miss: %d->%d\n",judge->settings.offsets.great.min,judge->settings.offsets.great.max,judge->settings.offsets.cool.min,judge->settings.offsets.cool.max,judge->settings.offsets.nice.min,judge->settings.offsets.nice.max,judge->settings.offsets.poor.min,judge->settings.offsets.poor.max,judge->settings.offsets.miss.min,judge->settings.offsets.miss.max);
+    judge_ranges[0].deviation = song_settings->judge.great;
+    judge_ranges[1].deviation = song_settings->judge.cool;
+    judge_ranges[2].deviation = song_settings->judge.nice;
+    judge_ranges[3].deviation = song_settings->judge.poor;
+    judge_ranges[4].deviation = song_settings->judge.poor + 20;
     
+    judge->settings.offsets.great = song_settings->judge.great;
+    judge->settings.offsets.cool = song_settings->judge.cool;    
+    judge->settings.offsets.nice = song_settings->judge.nice;    
+    judge->settings.offsets.poor = song_settings->judge.poor;
+    judge->settings.offsets.miss = song_settings->judge.poor + 20;
+    
+
     for(int i=0;i<2;i++){
         judge->settings.lifebar_rate[i].fever = song_settings->level_rate[i].fever;
         judge->settings.lifebar_rate[i].great = song_settings->level_rate[i].great;
@@ -42,6 +71,8 @@ void SongJudgeInit(PSongJudge judge, PSongSettings song_settings){
     
 }
 
+
+
 unsigned char FeverJudge(PSongJudge judge, short cursor_y, short cursor_offset, unsigned char fever_amount, unsigned char player_hit_state, unsigned char player_index, unsigned char player_autoplay, unsigned short total_notes){
     unsigned char judge_ani = ANI_JUDGE_NONE;
     // If we're not hitting it (or on autoplay) we don't care
@@ -51,16 +82,16 @@ unsigned char FeverJudge(PSongJudge judge, short cursor_y, short cursor_offset, 
     short cursor_max = cursor_y;
     
     // If we're not at the beat zone yet, we also don't care
-    if(cursor_max < judge->settings.offsets.poor.min){return judge_ani;}
+   // if(cursor_max < judge->settings.offsets.poor.min){return judge_ani;}
     
     // If we're past the beat zone, we also don't care (we'll cull this later). This also resets your fever combo because we're done the fever.
     // We'll set the animation to a fake "FEVER_OVER" enum so we'll cull the note at this point too.
-    if(cursor_min > judge->settings.offsets.poor.max){
+   // if(cursor_min > judge->settings.offsets.poor.max){
         judge->player[player_index].current_fever_combo = 0;
         judge_ani = ANI_JUDGE_FEVER_OVER;
         return judge_ani;
         
-    }
+ //   }
     
     
     float lifebar_rate = judge->settings.lifebar_rate[player_index].fever;
@@ -98,23 +129,25 @@ unsigned char FeverJudge(PSongJudge judge, short cursor_y, short cursor_offset, 
 
 // This is executed on every non-hitless, non-fever cursor to determine if the player hit the cursor and update their state accordingly.
 // It returns an ANI_JUDGE enum to tell the animation if a judgement note hit needs to be shown.
-unsigned char CursorJudge(PSongJudge judge, short cursor_y, unsigned char track_index, unsigned char player_hit_state, unsigned char player_index, unsigned char player_autoplay, unsigned short total_notes){
+unsigned char CursorJudge(short cursor_y, unsigned char player_autoplay){
 
     // If it's outside of the judgement zone, we don't care.
-    if(cursor_y < judge->settings.offsets.poor.min){return ANI_JUDGE_NONE;}
-
-    // To support autoplay, we'll also return until we're in the "GREAT" range.
-    if(player_autoplay && cursor_y < judge->settings.offsets.great.min){        
-        return ANI_JUDGE_NONE;
-    }
+    unsigned char judgement = GetPositionJudgement(cursor_y);
     
+    // To support autoplay, we'll also return until we're in the "GREAT" range.
+    if(player_autoplay && judgement != JV_JUDGE_GREAT){        
+        return JV_JUDGE_NONE;
+    }
+    return judgement;
+}
+/*
     // To account for double-hit cursors, we have to increment the beat count.
     int hit_inc = 1;
     if(track_index == 2 || track_index == 4){
             hit_inc++;
     }
     
-    if(cursor_y > judge->settings.offsets.poor.max){
+    if(judgement == JV_JUDGE_MISS){
         // Record Max Combo if necessary and reset Hit Combo
         if(judge->player[player_index].max_combo < judge->player[player_index].hit_combo){
             judge->player[player_index].hit_combo = judge->player[player_index].max_combo;   
@@ -133,7 +166,7 @@ unsigned char CursorJudge(PSongJudge judge, short cursor_y, unsigned char track_
         if(judge->player[player_index].lifebar == LIFEBAR_MIN){
             judge->player[player_index].lifebar_hit_zero = 1;
         }
-        return ANI_JUDGE_MISS;
+        return judgement;
     }
     
     // If we haven't missed a cursor, yet we're not hitting one at the moment, we'll skip everything else.
@@ -143,23 +176,24 @@ unsigned char CursorJudge(PSongJudge judge, short cursor_y, unsigned char track_
     float lifebar_rate = 0;
     unsigned int score_mult = 0;
     
+    
     // Now, we'll cascade the different judgements.
-    if(cursor_y >= judge->settings.offsets.great.min && cursor_y <= judge->settings.offsets.great.max){
+    if(judgement == JV_JUDGE_GREAT){
         judge->player[player_index].great+=hit_inc;
         lifebar_rate = judge->settings.lifebar_rate[player_index].great;
         score_mult = score_multiplier[JUDGE_GREAT];
         judge_ani = ANI_JUDGE_GREAT;
-    }else if(cursor_y >= judge->settings.offsets.cool.min && cursor_y <= judge->settings.offsets.cool.max){
+    }else if(judgement == JV_JUDGE_COOL){
         judge->player[player_index].cool+=hit_inc;
         lifebar_rate = judge->settings.lifebar_rate[player_index].cool;
         score_mult = score_multiplier[JUDGE_COOL];
         judge_ani = ANI_JUDGE_COOL;
-    }else if(cursor_y >= judge->settings.offsets.nice.min && cursor_y <= judge->settings.offsets.nice.max){
+    }else if(judgement == JV_JUDGE_NICE){
         judge->player[player_index].nice+=hit_inc;
         lifebar_rate = judge->settings.lifebar_rate[player_index].nice;
         score_mult = score_multiplier[JUDGE_NICE];
         judge_ani = ANI_JUDGE_NICE;
-    }else if(cursor_y >= judge->settings.offsets.poor.min && cursor_y <= judge->settings.offsets.poor.max){
+    }else if(judgement == JV_JUDGE_POOR){
         judge->player[player_index].poor+=hit_inc;
         lifebar_rate = judge->settings.lifebar_rate[player_index].poor;
         score_mult = score_multiplier[JUDGE_POOR];
@@ -186,3 +220,4 @@ unsigned char CursorJudge(PSongJudge judge, short cursor_y, unsigned char track_
     //printf("Return Judge :%d\n",judge_ani);
     return judge_ani;
 }
+*/

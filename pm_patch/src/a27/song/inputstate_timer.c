@@ -17,109 +17,19 @@ typedef struct _THREAD_PARAMS{
     PSongEvent event;
     PSongState state;
 }ThreadParams,*PThreadParams;
+static pthread_t trackinput_hthread;
 static ThreadParams tp;
 
 static unsigned char thread_running = 0;
 unsigned char InputStateTimer_IsRunning(void){return thread_running;}
 
+IOTrackStates track_state,last_sampled_track_state;
 
-/*
-IOTrackStates track_state;
-IOTrackStates last_track_state;
-
-static unsigned int last_last_swst = 0;
-static unsigned int last_swst = 0;
-
-
-void UpdateTrackInput(void){
-    
-    unsigned int swst = KeyIO_GetSwitches();
-    memcpy(&last_track_state,&track_state,sizeof(IOTrackStates));
-       
-    if(state.player_isplaying[0]){
-        track_state.player[0].track[LANE_BLUE] = IO_ISSSET(swst,last_swst,INP_P1_BLUE);
-        track_state.player[0].track[LANE_DRUM] = IO_ISSSET(swst,last_swst,INP_P1_DRUM_L) || IO_ISSSET(swst,last_swst,INP_P1_DRUM_R);
-        track_state.player[0].track[LANE_2DRUM] = (IO_ISSSET(swst,last_swst,INP_P1_DRUM_L) + IO_ISSSET(swst,last_swst,INP_P1_DRUM_R) + IO_ISSSET(last_swst,last_last_swst,INP_P1_DRUM_L) + IO_ISSSET(last_swst,last_last_swst,INP_P1_DRUM_R) > 1);
-        track_state.player[0].track[LANE_RIM] = IO_ISSSET(swst,last_swst,INP_P1_RIM_L) || IO_ISSSET(swst,last_swst,INP_P1_RIM_R);
-        track_state.player[0].track[LANE_2RIM] = (IO_ISSSET(swst,last_swst,INP_P1_RIM_L) + IO_ISSSET(swst,last_swst,INP_P1_RIM_R) + IO_ISSSET(last_swst,last_last_swst,INP_P1_RIM_L) + IO_ISSSET(last_swst,last_last_swst,INP_P1_RIM_R) > 1);
-        track_state.player[0].track[LANE_RED] = IO_ISSSET(swst,last_swst,INP_P1_RED);
-        
-        // If we hit both on rim or drum, we have to flip the single lanes.
-        if(track_state.player[0].track[LANE_2DRUM]){
-            track_state.player[0].track[LANE_DRUM] = 0;
-            last_track_state.player[0].track[LANE_2DRUM] = 1;            
-        }
-        if(track_state.player[0].track[LANE_2RIM]){
-            track_state.player[0].track[LANE_RIM] = 0;
-            last_track_state.player[0].track[LANE_2RIM] = 1;
-        }
-    }
-    if(state.player_isplaying[1]){
-        track_state.player[1].track[LANE_BLUE] = IO_ISSET(swst,INP_P2_BLUE);
-        track_state.player[1].track[LANE_DRUM] = IO_ISSET(swst,INP_P2_DRUM_L) || IO_ISSET(swst,INP_P2_DRUM_R);
-        track_state.player[1].track[LANE_2DRUM] = (IO_ISSET(swst,INP_P2_DRUM_L) + IO_ISSET(swst,INP_P2_DRUM_R) + IO_ISSET(last_swst,INP_P2_DRUM_L) + IO_ISSET(last_swst,INP_P2_DRUM_R) > 1);
-        track_state.player[1].track[LANE_RIM] = IO_ISSET(swst,INP_P2_RIM_L) || IO_ISSET(swst,INP_P2_RIM_R);
-        track_state.player[1].track[LANE_2RIM] =  (IO_ISSET(swst,INP_P2_RIM_L) + IO_ISSET(swst,INP_P2_RIM_R) + IO_ISSET(last_swst,INP_P2_RIM_L) + IO_ISSET(last_swst,INP_P2_RIM_R) > 1);
-        track_state.player[1].track[LANE_RED] = IO_ISSET(swst,INP_P2_RED);
-        
-        // If we hit both on rim or drum, we have to flip the single lanes.
-        if(track_state.player[1].track[LANE_2DRUM]){
-            track_state.player[1].track[LANE_DRUM] = 0;
-        }
-        if(track_state.player[1].track[LANE_2RIM]){
-            track_state.player[1].track[LANE_RIM] = 0;
-        }
-    }
-    last_last_swst = last_swst;
-    last_swst = swst; 
+PIOTrackStates InputStateTimer_GetTrackState(void){
+    return &track_state;
 }
 
-static void* trackinput_thread(void* arg){
-
-    unsigned int last_swst = 0;
-    unsigned int swst = KeyIO_GetSwitches();
-    while(in_song){  
-        swst = KeyIO_GetSwitches();
-        if(tp.state->player_isplaying[0]){
-            tp.track_states->player[0].track[LANE_BLUE] = IO_ISSET(swst,INP_P1_BLUE);
-            tp.track_states->player[0].track[LANE_DRUM] = IO_ISSET(swst,INP_P1_DRUM_L) || IO_ISSET(swst,INP_P1_DRUM_R);
-            tp.track_states->player[0].track[LANE_2DRUM] = (IO_ISSET(swst,INP_P1_DRUM_L) + IO_ISSET(swst,INP_P1_DRUM_R) + IO_ISSET(last_swst,INP_P1_DRUM_L) + IO_ISSET(last_swst,INP_P1_DRUM_R) > 1);
-            tp.track_states->player[0].track[LANE_RIM] = IO_ISSET(swst,INP_P1_RIM_L) || IO_ISSET(swst,INP_P1_RIM_R);
-            tp.track_states->player[0].track[LANE_2RIM] = (IO_ISSET(swst,INP_P1_RIM_L) + IO_ISSET(swst,INP_P1_RIM_R) + IO_ISSET(last_swst,INP_P1_RIM_L) + IO_ISSET(last_swst,INP_P1_RIM_R) > 1);
-            tp.track_states->player[0].track[LANE_RED] = IO_ISSET(swst,INP_P1_RED);
-            
-            // If we hit both on rim or drum, we have to flip the single lanes.
-            if(tp.track_states->player[0].track[LANE_2DRUM]){
-                tp.track_states->player[0].track[LANE_DRUM] = 0;
-            }
-            if(tp.track_states->player[0].track[LANE_2RIM]){
-                tp.track_states->player[0].track[LANE_RIM] = 0;
-            }
-        }
-        if(tp.state->player_isplaying[1]){
-            tp.track_states->player[1].track[LANE_BLUE] = IO_ISSET(swst,INP_P2_BLUE);
-            tp.track_states->player[1].track[LANE_DRUM] = IO_ISSET(swst,INP_P2_DRUM_L) || IO_ISSET(swst,INP_P2_DRUM_R);
-            tp.track_states->player[1].track[LANE_2DRUM] = (IO_ISSET(swst,INP_P2_DRUM_L) + IO_ISSET(swst,INP_P2_DRUM_R) + IO_ISSET(last_swst,INP_P2_DRUM_L) + IO_ISSET(last_swst,INP_P2_DRUM_R) > 1);
-            tp.track_states->player[1].track[LANE_RIM] = IO_ISSET(swst,INP_P2_RIM_L) || IO_ISSET(swst,INP_P2_RIM_R);
-            tp.track_states->player[1].track[LANE_2RIM] =  (IO_ISSET(swst,INP_P2_RIM_L) + IO_ISSET(swst,INP_P2_RIM_R) + IO_ISSET(last_swst,INP_P2_RIM_L) + IO_ISSET(last_swst,INP_P2_RIM_R) > 1);
-            tp.track_states->player[1].track[LANE_RED] = IO_ISSET(swst,INP_P2_RED);
-            
-            // If we hit both on rim or drum, we have to flip the single lanes.
-            if(tp.track_states->player[1].track[LANE_2DRUM]){
-                tp.track_states->player[1].track[LANE_DRUM] = 0;
-            }
-            if(tp.track_states->player[1].track[LANE_2RIM]){
-                tp.track_states->player[1].track[LANE_RIM] = 0;
-            }
-        }        
-        last_swst = swst;
-    }
-}
-
-
-*/
-
-unsigned short GetKeySoundMapping(unsigned char track_index){
+unsigned short InputStateTimer_GetKeySoundMapping(unsigned char track_index){
     switch(track_index){
         case LANE_BLUE:
             return KEYSOUND_BLUE;
@@ -138,20 +48,79 @@ unsigned short GetKeySoundMapping(unsigned char track_index){
     }
 }
 
-void InputStateTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event){
-        if(thread_running){
-        thread_running = 0;
-        // Wait a bit for the original thread to die off.
-       SleepMS(TIMER_RESTART_DELAY);
-    }
+void InputStateTimer_Update(void){
+            
+        // Handle KeySounds and Lane Animation - This requires a per-frame debounce.
+        for(int i=0;i<2;i++){
+            if(!tp.state->player_isplaying[i]){continue;}
+            for(int j=0;j<6;j++){                
+                if(track_state.player[i].track[j] && !last_sampled_track_state.player[i].track[j]){
+                    // If we're using the keysound for double hit, we have to disable the single hits. Otherwise, it sounds weird.
+                    if(j == LANE_2DRUM){
+                        tp.state->sound_index[(i*8) + LANE_DRUM] = KEYSOUND_OFF;
+                    }
+                    if(j == LANE_2RIM){
+                        tp.state->sound_index[(i*8) + LANE_2RIM] = KEYSOUND_OFF;
+                    }
+                    tp.state->sound_index[(i*8) + j] = InputStateTimer_GetKeySoundMapping(j);    
+                }
+            }
+            tp.state->player_track_hit_animation[i].track[LANE_BLUE] = track_state.player[i].track[LANE_BLUE] && !last_sampled_track_state.player[i].track[LANE_BLUE];
+            tp.state->player_track_hit_animation[i].track[LANE_DRUM] = track_state.player[i].track[LANE_DRUM]&& !last_sampled_track_state.player[i].track[LANE_DRUM];
+            tp.state->player_track_hit_animation[i].track[LANE_2DRUM] = track_state.player[i].track[LANE_2DRUM]&& !last_sampled_track_state.player[i].track[LANE_2DRUM];
+            tp.state->player_track_hit_animation[i].track[LANE_RIM] = track_state.player[i].track[LANE_RIM]&& !last_sampled_track_state.player[i].track[LANE_RIM];
+            tp.state->player_track_hit_animation[i].track[LANE_2RIM] = track_state.player[i].track[LANE_2RIM]&& !last_sampled_track_state.player[i].track[LANE_2RIM];
+            tp.state->player_track_hit_animation[i].track[LANE_RED] = track_state.player[i].track[LANE_RED]&& !last_sampled_track_state.player[i].track[LANE_RED];
+        }
+        memcpy(&last_sampled_track_state,&track_state,sizeof(IOTrackStates));
+}
+
+
+
+static void* trackinput_thread(void* arg){
+    PKeyIOState pio_state;
     thread_running = 1;
-    
+    while(SongManager_InSong()){
+        pio_state = KeyIO_GetState();
+        
+        if(tp.state->player_isplaying[0]){
+            track_state.player[0].track[LANE_BLUE] = pio_state->p1[KEYIO_PBLUE];
+            track_state.player[0].track[LANE_RED] = pio_state->p1[KEYIO_PRED];
+            track_state.player[0].track[LANE_DRUM] = pio_state->p1[KEYIO_PDRUM_L] || pio_state->p1[KEYIO_PDRUM_R];
+            track_state.player[0].track[LANE_RIM] = pio_state->p1[KEYIO_PRIM_L] || pio_state->p1[KEYIO_PRIM_R];
+            track_state.player[0].track[LANE_2DRUM] = pio_state->p1[KEYIO_PDRUM_L] && pio_state->p1[KEYIO_PDRUM_R];
+            track_state.player[0].track[LANE_2RIM] = pio_state->p1[KEYIO_PRIM_L] && pio_state->p1[KEYIO_PRIM_R];
+            if(track_state.player[0].track[LANE_2DRUM]){
+                    track_state.player[0].track[LANE_DRUM] = 0;
+            }
+            if(track_state.player[0].track[LANE_2RIM]){
+                    track_state.player[0].track[LANE_2RIM] = 0;
+            }            
+        }
+        if(tp.state->player_isplaying[1]){
+            track_state.player[1].track[LANE_BLUE] = pio_state->p2[KEYIO_PBLUE];
+            track_state.player[1].track[LANE_RED] = pio_state->p2[KEYIO_PRED];
+            track_state.player[1].track[LANE_DRUM] = pio_state->p2[KEYIO_PDRUM_L] || pio_state->p2[KEYIO_PDRUM_R];
+            track_state.player[1].track[LANE_RIM] = pio_state->p2[KEYIO_PRIM_L] || pio_state->p2[KEYIO_PRIM_R];
+            track_state.player[1].track[LANE_2DRUM] = pio_state->p2[KEYIO_PDRUM_L] && pio_state->p2[KEYIO_PDRUM_R];
+            track_state.player[1].track[LANE_2RIM] = pio_state->p2[KEYIO_PRIM_L] && pio_state->p2[KEYIO_PRIM_R];
+        }
+            if(track_state.player[1].track[LANE_2DRUM]){
+                    track_state.player[1].track[LANE_DRUM] = 0;
+            }
+            if(track_state.player[1].track[LANE_2RIM]){
+                    track_state.player[1].track[LANE_2RIM] = 0;
+            }          
+    }
+    thread_running = 0;
+
+}
+
+
+void InputStateTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event){ 
+    if(thread_running){return;}
     tp.event = event;
     tp.settings = song_settings;
     tp.state = state;
-   // pthread_create(&songtimer_hthread, 0, song_timer_thread, NULL);
-}
-
-void InputStateTimer_Stop(void){
-    thread_running = 0;
+    pthread_create(&trackinput_hthread, 0, trackinput_thread, NULL);
 }

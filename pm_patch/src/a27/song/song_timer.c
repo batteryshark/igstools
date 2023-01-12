@@ -36,28 +36,20 @@ short SongTimer_GetCurrentBeat(float ms_per_ebeat){
 static void *song_timer_thread(void* arg){
     song_start = GetCurrentTimestamp();
     song_elapsed = 0;
-    while(thread_running){                
+    thread_running = 1;
+    while(SongManager_InSong()){                
         song_elapsed = GetCurrentTimestamp() - song_start;
         tp.state->current_beat[0] = (short)song_elapsed / tp.event->ms_per_ebeat;
         tp.state->current_beat[1] = (short)song_elapsed / tp.event->ms_per_ebeat;
     }
+    thread_running = 0;
 }
 
 
 void SongTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event){
-    if(thread_running){
-        thread_running = 0;
-        // Wait a bit for the original thread to die off.
-        SleepMS(TIMER_RESTART_DELAY);
-    }
-    thread_running = 1;
-    
+    if(thread_running){return;}    
     tp.event = event;
     tp.settings = song_settings;
     tp.state = state;
     pthread_create(&songtimer_hthread, 0, song_timer_thread, NULL);
-}
-
-void SongTimer_Stop(void){
-    thread_running = 0;
 }

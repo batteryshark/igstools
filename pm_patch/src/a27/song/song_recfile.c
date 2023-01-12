@@ -38,6 +38,7 @@ int GenerateEventFilename(unsigned int song_mode, unsigned int chart_id, char* e
 }
 
 int LoadRecfile(const char* path_to_recfile,PRecFile rec_file){
+    memset(rec_file,0,sizeof(RecFile));
     printf("Opening SongData (Rec) File: %s\n",path_to_recfile);
     FILE* fp = fopen(path_to_recfile,"rb");
     if(fp == NULL){
@@ -74,6 +75,7 @@ int LoadRecfile(const char* path_to_recfile,PRecFile rec_file){
 
 // From the A27 Header Data - Load our Rec Structure.
 int LoadRecHeader(PRecDataHeader rec_header_data, PRecFile rec_file){
+    memset(rec_file,0,sizeof(RecFile));
     // The first part of this is basically the rec header with a different beginning.
     memcpy((unsigned char*)&rec_file->header+28,(unsigned char*)&rec_header_data+2,sizeof(PRecDataHeader)-2);
     for(int i=0;i<8;i++){

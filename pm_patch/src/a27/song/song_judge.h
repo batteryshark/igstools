@@ -50,19 +50,26 @@ enum LifebarSetting{
     LIFEBAR_MAX=28
 };
 
+enum JUDGE_VALUE{
+    JV_JUDGE_NONE,
+    JV_JUDGE_GREAT,
+    JV_JUDGE_COOL,
+    JV_JUDGE_NICE,
+    JV_JUDGE_POOR,
+    JV_JUDGE_MISS,
+    JV_JUDGE_FEVER_START,
+    JV_JUDGE_FEVER,
+    JV_JUDGE_FEVER_END,
+    JV_JUDGE_BRAVO
+};
 
-
-typedef struct _JUDGE_RANGE{
-    unsigned short min;
-    unsigned short max;
-}JudgeRange,*PJudgeRange;
 
 typedef struct _JUDGE_OFFSETS{
-    JudgeRange great;
-    JudgeRange cool;
-    JudgeRange nice;
-    JudgeRange poor;
-    JudgeRange miss;    
+    unsigned short great;
+    unsigned short cool;
+    unsigned short nice;
+    unsigned short poor;
+    unsigned short miss;    
 }JudgeOffsets,*PJudgeOffsets;
 
 typedef struct _JUDGE_SETTINGS{
@@ -94,5 +101,5 @@ typedef struct _SONG_JUDGE{
 
 void SongJudgeInit(PSongJudge judge,PSongSettings song_settings);
 unsigned char FeverJudge(PSongJudge judge,short cursor_y, short cursor_offset, unsigned char fever_amount, unsigned char player_hit_state, unsigned char player_index, unsigned char player_autoplay, unsigned short total_notes);
-unsigned char CursorJudge(PSongJudge judge,short cursor_y, unsigned char track_index, unsigned char player_hit_state, unsigned char player_index, unsigned char player_autoplay, unsigned short total_notes);
+unsigned char CursorJudge(short cursor_y, unsigned char player_autoplay);
 #endif

@@ -6,7 +6,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <signal.h>
-
+#ifdef A27_EMU_SUPPORTED
+#include "../a27/song/song_manager.h"
+#endif
 // -- Debug Functions
 void PrintHex(unsigned char* data, unsigned int len) {
     for (int i = 0; i < len; i++) {
@@ -15,8 +17,25 @@ void PrintHex(unsigned char* data, unsigned int len) {
     printf("\n");
 }
 
+
 // -- Process Functions
+#define PM_SYSTEM_STATUS_SHUTDOWN 4
+#define ADDR_SYSTEM_STATUS 0x08429880
+#define ADDR_SYSTEM_END 0x08056130
+void (*SystemEnd)(void) = (void*)ADDR_SYSTEM_END;
+
+void Shutdown(void){
+  
+    int* PM_SystemStatus = (int*)ADDR_SYSTEM_STATUS;    
+    *PM_SystemStatus = PM_SYSTEM_STATUS_SHUTDOWN;
+    SystemEnd();
+}
 void QuitProcess(void){
+#ifdef A27_EMU_SUPPORTED
+    SongManager_StopSong();
+#endif
+    Shutdown();
+    exit(0);
     kill(getpid(),SIGKILL);
 }
 

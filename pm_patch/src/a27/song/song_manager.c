@@ -16,13 +16,16 @@ SongState state;
 SongJudge judge;
 RecFile rec_file;
 SongEvent event;
+static unsigned char in_song;
+unsigned char SongManager_InSong(void){return in_song;}
+void SongManager_StopSong(void){in_song = 0;}
+void SongManager_StartSong(void){in_song = 1;}
 
-void StopTimers(void){
-    SongTimer_Stop();
-    EventTimer_Stop();
-    ScrollTimer_Stop();
-    JudgeTimer_Stop();
-    InputStateTimer_Stop();    
+void ResetStateManagement(void){
+    memset(&settings,0,sizeof(SongSettings));
+    memset(&rec_file,0,sizeof(RecFile));
+    memset(&event,0,sizeof(SongEvent));
+    memset(&state,0,sizeof(SongState));
 }
 
 unsigned int SongManager_Record_Header(void* header_data, void* response_buffer){
@@ -40,13 +43,15 @@ unsigned int SongManager_Record_Body(void* body_data, void* response_buffer){
 
 unsigned int SongManager_Init(void* setting_data, void* response_buffer){
     printf("SongManager_Init\n");
-    StopTimers();
+    SongManager_StopSong();
+    ResetStateManagement();
     // Copy our Song Settings Data
     memcpy(&settings,setting_data,sizeof(SongSettings));
     SongJudgeInit(&judge, &settings);
 
     // Initialize Our Song State Data
-    memset(&state,0,sizeof(SongState));    
+    memset(&state,0,sizeof(SongState));  
+    memset(&state.player_cursor,0,sizeof(PlayerCursor)*2);
     state.cmd = A27_SONGMODE_MAINGAME_SETTING;
     memcpy(response_buffer,&state,sizeof(SongState));
     return sizeof(SongState);    
@@ -61,8 +66,8 @@ unsigned int SongManager_Reset(void* response_buffer){
 
 void SongManager_Stop(void){
     printf("SongManager_Stop\n");
-    StopTimers();
-    
+    SongManager_StopSong();
+    while(SongTimer_IsRunning() || EventTimer_IsRunning() || ScrollTimer_IsRunning() || JudgeTimer_IsRunning() || InputStateTimer_IsRunning()){}   
 }
 
 unsigned int SongManager_Start(void* response_buffer){
@@ -97,21 +102,13 @@ unsigned int SongManager_Start(void* response_buffer){
     memcpy(response_buffer,&state,sizeof(SongState));
     
     // Start the Timers
-    if(!EventTimer_IsRunning()){
-        EventTimer_Start(&settings,&state,&event);
-    }
-    if(!ScrollTimer_IsRunning()){
-        ScrollTimer_Start(&settings,&state,&event);    
-    }
-    if(!JudgeTimer_IsRunning()){
-        JudgeTimer_Start(&settings,&state,&event);    
-    }
-    if(!InputStateTimer_IsRunning()){
-        InputStateTimer_Start(&settings,&state,&event);    
-    }
-    if(!SongTimer_IsRunning()){
-        SongTimer_Start(&settings,&state,&event);            
-    }
+    SongManager_StartSong();
+    EventTimer_Start(&settings,&state,&event);
+    ScrollTimer_Start(&settings,&state,&event);
+    JudgeTimer_Start(&settings,&state,&event,&judge); 
+    InputStateTimer_Start(&settings,&state,&event); 
+    SongTimer_Start(&settings,&state,&event);
+
 
     // We'll block on waiting for our threads to start.
     while(!SongTimer_IsRunning() || !EventTimer_IsRunning() || !ScrollTimer_IsRunning() || !JudgeTimer_IsRunning() || !InputStateTimer_IsRunning()){}
@@ -120,12 +117,27 @@ unsigned int SongManager_Start(void* response_buffer){
 
 unsigned int SongManager_Update(void* response_buffer){
     state.cmd = A27_SONGMODE_MAINGAME_PROCESS;
+    InputStateTimer_Update();
+    JudgeTimer_Update();
+    long long song_elapsed = SongTimer_GetSongElapsed();
+    for(int i=0; i < event.num_sound_events; i++){
+        PSoundEvent ce = &event.sound_event[i];                
+        if(ce->spawn_ms > 0 && ce->spawn_ms <= song_elapsed){            
+            EventTimer_AddToSoundEvents(ce->event_value);
+            ce->spawn_ms = -1;
+        }
+    }
     
     memcpy(response_buffer,&state,sizeof(SongState));    
     // Reset Sound Index Values
     for(int i=0;i<32;i++){
         state.sound_index[i] = 0;
     }
+    
+    memset(&state.player_cursor_hit_animation[0],0x00,sizeof(PlayerAnimation));
+    memset(&state.player_judge_graphic[0],0x00,sizeof(PlayerAnimation));
+    memset(&state.player_cursor_hit_animation[1],0x00,sizeof(PlayerAnimation));
+    memset(&state.player_judge_graphic[1],0x00,sizeof(PlayerAnimation));    
     return sizeof(SongState);    
 }
 

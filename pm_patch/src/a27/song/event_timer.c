@@ -18,6 +18,7 @@ typedef struct _THREAD_PARAMS{
 
 
 static unsigned char thread_running = 0;
+
 unsigned char EventTimer_IsRunning(void){return thread_running;}
 static pthread_t eventtimer_hthread;
 static ThreadParams tp;
@@ -81,17 +82,17 @@ void EventTimer_ClearCursor(PSongState song_state, unsigned char player_index, u
     song_state->player_cursor[player_index].cursor[cursor_index].fever_offset = 0;
 }
 
-void AddToSoundEvents(unsigned short event_value){
+void EventTimer_AddToSoundEvents(unsigned short event_value){
     for(int i=15;i<32;i++){
         if(!tp.state->sound_index[i]){
-            tp.state->sound_index[i] = event_value;   
+           tp.state->sound_index[i] = event_value;   
         }
     }    
 }
 
 static void *event_thread(void* arg){
-
-    while(thread_running){             
+    thread_running = 1;
+    while(SongManager_InSong()){             
         long long song_elapsed = SongTimer_GetSongElapsed();
         for(int i=0;i<2;i++){
             // So what we need to do here is - every beat, look if we're in a new measure of the song
@@ -115,35 +116,21 @@ static void *event_thread(void* arg){
                 }
             }
         }           
-        for(int i=0; i < tp.event->num_sound_events; i++){
-            PSoundEvent ce = &tp.event->sound_event[i];                
-            if(ce->spawn_ms > 0 && ce->spawn_ms <= song_elapsed){
-                AddToSoundEvents(ce->event_value);
-                ce->spawn_ms = -1;
-            }
-        }
+
         SleepMS(1);
     }
+    thread_running = 0;
 }
 
 PCursorTimestamps EventTimer_GetCursorTS(void){
     return &ts;
 }
 
-void EventTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event){    
-    if(thread_running){
-        thread_running = 0;
-        // Wait a bit for the original thread to die off.
-        SleepMS(TIMER_RESTART_DELAY);
-    }
-    thread_running = 1;
+void EventTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event){
+    if(thread_running){return;}
     memset(&ts,0,sizeof(CursorTimestamps));
     tp.event = event;
     tp.settings = song_settings;
     tp.state = state;
     pthread_create(&eventtimer_hthread, 0, event_thread, NULL);
-}
-
-void EventTimer_Stop(void){
-    thread_running = 0;
 }
