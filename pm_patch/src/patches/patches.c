@@ -16,7 +16,7 @@
 #define ADDR_SKIP_WARNING       0x080A7D04
 #define ADDR_SKIP_WARNING2      0x080A7DBD
 #define ADDR_ENABLE_AUTOPLAY    0x080A7DC7
-
+#define ADDR_MENU_LANGUAGE      0x080739EC
 
 // MTV Localization Stuff
 static char* noyes[] = {
@@ -188,6 +188,11 @@ void Patch_DevTest(void){
     printf("[Patches::DevTest] Enabling DevTest Menu.\n");
     Replace_OperatorMenu(ADDR_MENU_DEVTEST);
     Localize_MTVMenu();
+}
+
+void Patch_Language(void){
+    printf("[Patches::DevTest] Enabling Language Menu.\n");
+    Replace_OperatorMenu(ADDR_MENU_LANGUAGE);    
 }
 
 void Patch_Autoplay(void){
