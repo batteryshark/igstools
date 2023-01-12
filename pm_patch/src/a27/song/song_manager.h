@@ -67,6 +67,7 @@ PCursorTimestamps EventTimer_GetCursorTS(void);
 void EventTimer_ClearCursor(PSongState song_state, unsigned char player_index, unsigned short cursor_index);
 void EventTimer_Start(PSongSettings song_settings,PSongState state, PSongEvent event);
 void EventTimer_Stop(void);
+void EventTimer_ClearSoundEvents(void);
 unsigned char EventTimer_IsRunning(void);
 void EventTimer_AddToSoundEvents(unsigned short event_value);
 // Scrolling Timer
@@ -93,4 +94,5 @@ void SongManager_Stop(void);
 unsigned int SongManager_GetResult(void* response_buffer);
 unsigned int SongManager_Record_Header(void* header_data, void* response_buffer);
 unsigned int SongManager_Record_Body(void* body_data, void* response_buffer);
+unsigned int SongManager_SongMode_2(void* body_data, void* response_buffer);
 #endif

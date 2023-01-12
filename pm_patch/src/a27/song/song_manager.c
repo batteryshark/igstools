@@ -41,6 +41,12 @@ unsigned int SongManager_Record_Body(void* body_data, void* response_buffer){
     return 4;
 }
 
+unsigned int SongManager_SongMode_2(void* body_data, void* response_buffer){    
+    memset(response_buffer,0x00,4);
+    memset(response_buffer,2,1);
+    return 4;    
+}
+
 unsigned int SongManager_Init(void* setting_data, void* response_buffer){
     printf("SongManager_Init\n");
     SongManager_StopSong();
