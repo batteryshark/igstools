@@ -57,7 +57,7 @@ typedef struct _A27_RECDATA_HEADER{
 	unsigned char p2_enable;
 	unsigned short idk_2;
 	unsigned short hbpm_2;
-	unsigned char idk_3[78];
+	unsigned char idk_3[76];
 	// Remember that the totals in this case include the 0x3FFF 'end' marker too.
 	unsigned short p1_track_total_events[8];
 	unsigned short p2_track_total_events[8];
