@@ -1,6 +1,6 @@
 
 BASE_PATH := /peng/linux
-STANDARD_FLAGS := -shared -m32 -fpack-struct=1
+STANDARD_FLAGS := -shared -m32 -fpack-struct=1 -fno-stack-protector
 BASE_COMPONENTS := src/pm_patch.c src/patches/patches.c src/utils/utils.c src/log/a27_log.c src/io/*.c src/a27/utils.c
 EMULATOR_COMPONENTS := src/a27/emulator.c src/a27/firmware/*.c src/a27/song/*.c
 
