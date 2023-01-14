@@ -35,7 +35,6 @@ void GenerateMeasureCursors(PSongEvent event, unsigned char speed_mod_p1, unsign
 
 unsigned int ParseCursorEvents(PRecFileLane* plane,PCursorEvent* cursor_events, float tempo, unsigned char speed_mod){
     float ms_per_beat = ((float)((60 * 1000) / tempo)) / 8;   
-    
     unsigned char player_velocity = calculate_velocity(tempo,speed_mod);
     unsigned int num_cursor_events = 0;
     for(int i=0;i<8;i++){

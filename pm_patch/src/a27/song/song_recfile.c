@@ -77,7 +77,7 @@ int LoadRecfile(const char* path_to_recfile,PRecFile rec_file){
 int LoadRecHeader(PRecDataHeader rec_header_data, PRecFile rec_file){
     memset(rec_file,0,sizeof(RecFile));
     // The first part of this is basically the rec header with a different beginning.
-    memcpy((unsigned char*)&rec_file->header+28,(unsigned char*)&rec_header_data+2,sizeof(PRecDataHeader)-2);
+    memcpy((unsigned char*)&rec_file->header+28,(unsigned char*)rec_header_data+2,sizeof(RecDataHeader)-2);
     for(int i=0;i<8;i++){
             rec_file->p1_events[i].num_events = rec_header_data->p1_track_total_events[i]-1;
             rec_file->p2_events[i].num_events = rec_header_data->p2_track_total_events[i]-1;
