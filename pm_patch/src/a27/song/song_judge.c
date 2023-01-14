@@ -252,22 +252,28 @@ void Update_Judgement(PSongSettings settings, PSongEvent event, PSongState state
                     state->player_judge_graphic[i].track[cursor_track] = ANI_JUDGE_POOR;
                     HideCursor(state->player_cursor[i].cursor[j]);
                 }   
-                // Update Score
-                judge->player[i].score += (score_mult * judge->player[i].hit_combo);
 
-                // Update Hit Combo
-                judge->player[i].hit_combo+=hit_inc;
+                // We don't update a score in record mode.
+                if(settings->key_record_mode != RECORD_SONG_MODE){
 
-                // Update Lifebar
-                judge->player[i].lifebar += (lifebar_rate * hit_inc);
-                // Snap Lifebar to Max if Necessary.
-                if(judge->player[i].lifebar > LIFEBAR_MAX){
-                    judge->player[i].lifebar = LIFEBAR_MAX;
-                }
+                    // Update Hit Combo
+                    judge->player[i].hit_combo+=hit_inc;
                     
-                // If we full combo'd the song, we'll send a different animation back.
-                if(event->total_notes == judge->player[i].hit_combo){
-                    state->player_judge_graphic[i].track[cursor_track] = ANI_JUDGE_BRAVO;
+                    // Update Score
+                    judge->player[i].score += (score_mult * judge->player[i].hit_combo);
+
+                    // Update Lifebar
+                    judge->player[i].lifebar += (lifebar_rate * hit_inc);
+                    // Snap Lifebar to Max if Necessary.
+                    if(judge->player[i].lifebar > LIFEBAR_MAX){
+                        judge->player[i].lifebar = LIFEBAR_MAX;
+                    }
+                        
+                    // If we full combo'd the song, we'll send a different animation back.
+                    if(event->total_notes == judge->player[i].hit_combo){
+                        state->player_judge_graphic[i].track[cursor_track] = ANI_JUDGE_BRAVO;
+                    }
+                
                 }
                 state->player_cursor_hit_animation[i].track[cursor_track] = 1;
                 
