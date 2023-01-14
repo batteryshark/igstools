@@ -23,7 +23,6 @@ void SongManager_StartSong(void){in_song = 1;}
 
 void ResetStateManagement(void){
     memset(&settings,0,sizeof(SongSettings));
-    memset(&rec_file,0,sizeof(RecFile));
     memset(&event,0,sizeof(SongEvent));
     memset(&state,0,sizeof(SongState));
 }
