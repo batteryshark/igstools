@@ -17,6 +17,9 @@
 #define ADDR_SKIP_WARNING2      0x080A7DBD
 #define ADDR_ENABLE_AUTOPLAY    0x080A7DC7
 #define ADDR_MENU_LANGUAGE      0x080739EC
+#define ADDR_OSS_SOUNDFIX       0x0807C34F
+#define ADDR_REAL_SOUNDPLAY     0x08065524
+#define ADDR_SOUND_CH_TABLE     0x083EF020
 
 // MTV Localization Stuff
 static char* noyes[] = {
@@ -209,15 +212,20 @@ void Patch_SkipWarning(void){
         *(unsigned int*)ADDR_SKIP_WARNING2 = 10;
 }
 
-int (*real_soundplay)(unsigned int channel, int volume) = (void*)0x8065524;
-int fake_soundplay(unsigned int channel, int volume){
-    if(channel == 0 && volume == 22){return 1;}
+
+int (*real_soundplay)(int channel, int volume) = (void*)ADDR_REAL_SOUNDPLAY;
+int fake_soundplay(int channel, int volume){
+    
+    // The songs get obnoxiously loud, probably due to the OSS emulation layer.
+    if(volume > 5){volume = 2;}
+    // Avoid calling a channel that doesn't exist - the staff page has an issue that crashes the game otherwise.
+    char channel_state = *(unsigned char*)ADDR_SOUND_CH_TABLE+(6 * channel);
+    if(!channel_state){return 1;}
     return real_soundplay(channel,volume);
 }
-
-void Patch_StaffAudio(void){
-    printf("[Patches::StaffAudio] Patching Staff Audio Crash.\n");
-    PatchCall((void*)0x0807C34F,(void*)fake_soundplay);
+void Patch_OSSSoundFix(void){
+    printf("[Patches::StaffAudio] Patching Staff Audio Crash and SongVolume.\n");
+    PatchCall((void*)ADDR_OSS_SOUNDFIX,(void*)fake_soundplay);
 }
 
 void Patch_FilesystemPaths(void){

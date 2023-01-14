@@ -30,7 +30,6 @@ static int keyio_emu = 0;
 static int a27_log = 0;
 static int a27_emulator = 0;
 
-
 // PCCARD FileIO Hooks
 static int pccard_open(const char * filename, int oflag){
 #ifdef A27_EMU_SUPPORTED
@@ -103,7 +102,7 @@ void __attribute__((constructor)) initialize(void){
     // We'll always patch the filesystem paths to not be absolute [damn sith].
     Patch_FilesystemPaths();
     // We'll also always patch the hang that happens on staff audio.
-    Patch_StaffAudio();
+    Patch_OSSSoundFix();
     // Set up our various 'optional' patches.
     if(getenv("PM_WINDOWED")){Patch_SetWindowedMode();}
     
