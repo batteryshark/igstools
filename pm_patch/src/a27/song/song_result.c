@@ -63,5 +63,5 @@ void GetSongResult(PSongSettings settings, PSongJudge judge,PSongResult res, uns
         
     }
     // TODO: Verify this actually works...
-    res->enable_bonus_stage = (res->song_clear && settings->stage_num > 1) ? 1 : 0;
+    res->enable_bonus_stage = (res->song_clear && settings->stage_num > 2) ? 1 : 0;
 }
