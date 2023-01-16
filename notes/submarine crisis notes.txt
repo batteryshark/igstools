@@ -1,0 +1,22 @@
+Submarine Crisis Notes
+	/bin/HWTest creates /mnt/head and /mnt/GECA
+	Note: /bin/csh also does this, but it has different offsets. Might be for another game...
+	Note2: These are sector offsets, multiply by 512 to get the right byte offset.
+	CSH: /dev/hdc2 0x1FB78 and /dev/hdc1 0x1A24
+	Submarine Crisis:  /dev/hdc2 0x1D9F5 and /dev/hdc1 0x1A0A
+	/mnt/GECA is the header to the elf rc.0 which then mounts some game initialization tempfs with the game executable
+	which /mnt/head appears to be the header of 
+	
+	it mounts this to /Sub/exec/sub
+	
+	write a script that does the dump of mnt/head mnt/geca 
+	
+	HWTest Reads two ELF headers from partitions 1 and 2 and calls them "head" and "GECA"
+	"GECA" = the header for /etc/rc.d/rc0.d -> this is your boot and exe dumping program.
+	"head" = the header for the game itself, appended to the combination of rc.# files how rc0.d performs them 
+	
+	
+	0 highmem available
+	0 lowmem available 
+	load the kernel with C0100000
+	c077c550 panic ...
